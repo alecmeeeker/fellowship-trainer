@@ -1,0 +1,63 @@
+/* theme.css — design tokens for the "Focused dark IDE" aesthetic.
+   Layered charcoal canvas, one sharp cyan-teal accent, mono-forward chrome. */
+:root {
+  /* canvas — deepest to raised */
+  --bg-0: #0d1015;
+  --bg-1: #14181f;
+  --bg-2: #1b212b;
+  --bg-3: #232c39;
+  --bg-inset: #090b0f;
+
+  /* lines */
+  --line: #29323f;
+  --line-soft: #1d242e;
+  --line-strong: #3a4554;
+
+  /* ink — luminance-tuned for legibility on the charcoal canvas.
+     dim  ≈ 8.9:1 on --bg-1 (was 6.9:1), faint ≈ 5.3:1 (was 3.4:1, sub-AA).
+     Same cool blue-grey hue, lifted lightness. */
+  --ink: #e7ebf2;
+  --ink-dim: #aeb8c8;
+  --ink-faint: #818d9f;
+
+  /* accent — refined cyan-teal, used sparingly */
+  --accent: #4fe3c7;
+  --accent-2: #37b8a3;
+  --accent-ink: #04110e;
+  --accent-glow: rgba(79, 227, 199, 0.14);
+  --accent-line: rgba(79, 227, 199, 0.40);
+
+  /* semantic — muted, never garish */
+  --ok: #5ad99a;
+  --ok-bg: rgba(90, 217, 154, 0.13);
+  --ok-line: rgba(90, 217, 154, 0.38);
+  --bad: #f2756b;
+  --bad-bg: rgba(242, 117, 107, 0.13);
+  --bad-line: rgba(242, 117, 107, 0.40);
+  --warn: #e9b45c;
+  --warn-bg: rgba(233, 180, 92, 0.13);
+  --info: #6cb6ff;
+
+  /* type */
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+
+  /* radii — sharp, IDE-like */
+  --r-sm: 4px;
+  --r-md: 7px;
+  --r-lg: 11px;
+
+  /* elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 10px 34px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 14px 44px rgba(0, 0, 0, 0.62);
+
+  /* layout */
+  --rail-w: 214px;
+  --header-h: 54px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fast: 120ms;
+  --med: 240ms;
+}

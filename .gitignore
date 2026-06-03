@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# Local point-in-time content backups (large, redundant with git history)
+*.bak

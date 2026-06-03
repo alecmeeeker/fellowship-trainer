@@ -1,0 +1,298 @@
+/* mobile.css — responsive layer for the "Focused dark IDE" aesthetic.
+ *
+ * Loaded LAST so its media queries win over the desktop rules in
+ * layout.css / components.css. The desktop app is a fixed-viewport 3-pane IDE;
+ * on a phone it becomes: a slide-in nav drawer, a single-column reading flow,
+ * and a tabbed (Instructions / Code) IDE with a horizontal file strip.
+ *
+ * Primary breakpoint: 760px (phone + small-tablet portrait). A few finer
+ * adjustments live at 480px. Desktop (>760px) is untouched except for the
+ * always-hidden mobile-only chrome declared below.
+ *
+ * Touch ergonomics: hamburger / nav rows / buttons target ~44px; CodeMirror
+ * jumps to 16px so iOS Safari does not zoom the page when the editor focuses.
+ */
+
+/* ===========================================================================
+ * Mobile-only chrome — declared hidden here, revealed inside the media query.
+ * (The hamburger + backdrop live in the DOM at all sizes; CSS gates them.)
+ * ======================================================================== */
+.hamburger { display: none; }
+.nav-backdrop { display: none; }
+.ws-toggle { display: none; }
+
+.hamburger {
+  width: 38px;
+  height: 38px;
+  margin-left: -6px;
+  border-radius: var(--r-sm);
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: background var(--fast), color var(--fast);
+}
+.hamburger:hover { background: var(--bg-2); color: var(--ink); }
+.hamburger:active { background: var(--bg-3); }
+
+/* ===========================================================================
+ * PHONE / NARROW  (<= 760px)
+ * ======================================================================== */
+@media (max-width: 760px) {
+
+  /* ---- dynamic viewport height: dodge the iOS URL-bar collapse ---- */
+  #app, .shell, .boot { height: 100dvh; }
+
+  /* ---- app shell: rail becomes an off-canvas drawer ---- */
+  .shell { grid-template-columns: 1fr; }
+
+  .rail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 274px;
+    max-width: 84vw;
+    z-index: 60;
+    transform: translateX(-102%);
+    transition: transform var(--med) var(--ease);
+    box-shadow: var(--shadow-2);
+    will-change: transform;
+    /* respect the iOS safe areas when open */
+    padding-top: env(safe-area-inset-top);
+  }
+  .shell.nav-open .rail { transform: translateX(0); }
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(4, 6, 9, 0.62);
+    backdrop-filter: blur(1.5px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--med) var(--ease);
+  }
+  .shell.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+
+  /* bigger nav tap targets inside the drawer */
+  .rail__nav { padding: 10px 12px; }
+  .navitem { padding: 12px 12px; font-size: 13px; gap: 13px; }
+  .navitem__glyph { font-size: 15px; }
+
+  /* ---- header: reveal the hamburger, tighten the rest ---- */
+  .hamburger { display: inline-flex; }
+  .header {
+    padding: 0 14px;
+    gap: 10px;
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--header-h) + env(safe-area-inset-top));
+  }
+  .header__title { font-size: 13px; }
+  .engine { padding: 3px 8px; font-size: 9.5px; }
+  .engine span:not(.dot) { display: none; }      /* keep just the status dot to save room */
+  .streak { display: none; }                      /* streak value still lives on Dashboard/Stats */
+
+  /* ---- generic screens: reclaim the horizontal padding ---- */
+  .screen--pad { padding: 18px 16px 64px; }
+  .screen__wrap { max-width: none !important; }    /* inline maxWidth:760/780/etc → full bleed */
+  .lead { max-width: none; font-size: 13.5px; }
+  .section-head { margin: 22px 0 12px; }
+
+  /* typography trims so big display headings stop eating the viewport */
+  .h1 { font-size: 19px; }
+  .src__head-title { font-size: 30px; }
+  .src__section-title { font-size: 21px; }
+  .cram__head-title { font-size: 25px; }
+  .cram__remain-big { font-size: 32px; }
+  .pathpanel__title { font-size: 17px; }
+  .pathpanel { padding: 16px 15px; }
+
+  /* ---- tap targets: lift the small controls to a comfortable size ---- */
+  .btn { padding: 10px 16px; font-size: 12px; }
+  .btn--sm { padding: 7px 12px; font-size: 11px; }
+  .quiz__opt { padding: 12px 14px; font-size: 13.5px; }
+  .lvlselect { padding: 9px 10px; font-size: 13px; }
+  .tab { padding: 11px 14px; font-size: 11px; }
+  .filenode { padding: 8px 10px; }
+  .src__nav { padding: 11px 12px; }
+  .cram__step-cb { width: 24px; height: 24px; }
+
+  /* cards stack to one column; trim their inner padding a touch */
+  .grid--auto, .grid--2, .grid--3 { grid-template-columns: 1fr; }
+  .card { padding: 15px; }
+
+  /* ---- cram-pointer banner: stack its 3 nowrap children ---- */
+  .cram-pointer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+  }
+  .cram-pointer__text { white-space: normal; }
+
+  /* ---- curriculum: guided-path panel head + lesson rows ---- */
+  .pathpanel__head { flex-direction: column; align-items: stretch; gap: 12px; }
+  .pathpanel__head > div:first-child { min-width: 0; }
+  .pathpanel__head .btn { width: 100%; justify-content: center; }
+  .pathgroups { grid-template-columns: 1fr; }
+  .lesson-row { flex-wrap: wrap; }
+
+  /* ---- stats: project + exam rows (inline flex with fixed-px children) ---- */
+  .stat-row { flex-wrap: wrap; }
+  .stat-bar { max-width: none !important; flex-basis: 100%; order: 3; }
+
+  /* ---- exam-summary: per-level rows + hero ---- */
+  .lvl-row { flex-wrap: wrap; }
+  .summary-hero { gap: 16px !important; }
+
+  /* ---- cram: path switcher + head metrics ---- */
+  .cram { padding: 22px 16px 64px; }
+  .cram__switch { flex-wrap: wrap; }
+  .cram__progress-meta { flex-direction: column; gap: 3px; }
+
+  /* ---- sources: real overflow bug ----
+   * Two parts: (1) cards demand a 360px minimum track on desktop; (2) the card
+   * carries a white-space:nowrap URL. A plain "1fr" track is minmax(AUTO,1fr),
+   * and that auto-minimum = min-content = the nowrap URL width, which inflates
+   * the track past the viewport. minmax(0,1fr) + min-width:0 lets the card
+   * shrink to the column and the URL clip via its existing ellipsis. */
+  .src { padding: 24px 16px 64px; }
+  .src__grid { grid-template-columns: minmax(0, 1fr); }
+  .src__card { min-width: 0; }
+  .src__layout { gap: 18px; }
+  .src__sidebar { gap: 4px; }
+
+  /* =========================================================================
+   * THE IDE  (project / exam / drill screens)
+   * work-split: instructions beside IDE  ->  tabbed, one pane at a time.
+   * ide:        files | editor+tests     ->  file strip on top, stacked below.
+   * ====================================================================== */
+
+  /* scorebar: let the control row wrap instead of overflowing */
+  .scorebar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    row-gap: 8px;
+  }
+  .scorebar .btn { flex: 1 1 auto; justify-content: center; min-width: 88px; }
+  .scorebar__score { font-size: 12px; }
+  .timer { font-size: 15px; padding: 4px 10px; }
+
+  /* the Instructions / Code segmented toggle (injected by lib/mobile.js) */
+  .ws-toggle {
+    display: flex;
+    flex: none;
+    gap: 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-1);
+  }
+  .ws-toggle__btn {
+    flex: 1;
+    padding: 11px 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 2px solid transparent;
+    transition: color var(--fast), border-color var(--fast), background var(--fast);
+  }
+  .ws-toggle__btn.is-active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .work-split {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    min-height: 0;
+  }
+  .work-split__desc {
+    border-right: none;
+    flex: 1;
+    min-height: 0;
+  }
+  .work-split > .ide { flex: 1; min-height: 0; }
+  /* show exactly one pane; the toggle flips the .show-code class */
+  .work-split:not(.show-code) > .ide { display: none; }
+  .work-split.show-code > .work-split__desc { display: none; }
+
+  /* IDE internals: single column, file tree becomes a horizontal strip */
+  .ide {
+    grid-template-columns: none;
+    grid-template-rows: auto 1fr;
+  }
+  .ide__side {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: 0;
+  }
+  .ide__side > .panel-head { display: none; }
+  .filetree {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 6px;
+    padding: 7px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .filetree__group { display: none; }
+  .filenode {
+    width: auto;
+    flex: none;
+    white-space: nowrap;
+    border: 1px solid var(--line-soft);
+  }
+  .filenode__tag { display: none; }
+
+  /* editor over results, with a chunkier drag handle for fingers */
+  .ide__work { grid-template-rows: 1fr 16px minmax(120px, 46%); }
+  .ide__gutter { touch-action: none; }
+  .ide__gutter::after { width: 44px; height: 3px; }
+
+  /* 16px stops iOS Safari from zooming the page when the editor focuses */
+  .CodeMirror,
+  .CodeMirror textarea { font-size: 16px !important; }
+
+  /* lesson embedded editors get a touch more breathing room */
+  .runnable .CodeMirror { min-height: 52px; }
+  .exercise .CodeMirror { min-height: 108px; }
+
+  /* code/pre blocks: keep long lines scrollable, never let them widen the page */
+  .md__pre, .trace, .terminal { max-width: 100%; }
+}
+
+/* ===========================================================================
+ * VERY NARROW  (<= 480px) — final squeeze for small phones
+ * ======================================================================== */
+@media (max-width: 480px) {
+  .screen--pad { padding: 16px 13px 60px; }
+  .h1 { font-size: 18px; }
+  .src__head-title { font-size: 26px; }
+  .cram__head-title { font-size: 22px; }
+  .scorebar .btn { font-size: 11px; padding: 9px 10px; }
+  /* exercise/runnable action bars: let the buttons wrap under the label */
+  .exercise__bar, .runnable__bar { flex-wrap: wrap; row-gap: 7px; }
+}
+
+/* ===========================================================================
+ * Touch devices (any width): give tap feedback the desktop gets from :hover,
+ * and stop the page from rubber-banding behind fixed chrome.
+ * ======================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  .card--link:active,
+  .navitem:active,
+  .pathstep:active,
+  .src__card:active { background: var(--bg-2); }
+  .btn:active { transform: translateY(1px); }
+}

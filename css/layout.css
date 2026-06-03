@@ -1,0 +1,245 @@
+/* layout.css — app shell, screen scaffolding, the 3-pane IDE grid */
+
+#app { height: 100vh; }
+
+/* ---- app shell: rail + main ---- */
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  height: 100vh;
+}
+
+/* ---- left rail ---- */
+.rail {
+  background: var(--bg-1);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.rail__brand {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.rail__mark {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.rail__mark::before {
+  content: "";
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: rotate(45deg);
+}
+.rail__sub {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 7px;
+  padding-left: 18px;
+}
+.rail__nav { padding: 10px 10px; overflow-y: auto; flex: 1; min-height: 0; }
+.rail__foot {
+  border-top: 1px solid var(--line-soft);
+  padding: 11px 14px;
+}
+
+/* ---- main column ---- */
+.main {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr;
+  min-width: 0;
+  min-height: 0;
+}
+.header {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-1);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  min-width: 0;
+}
+.header__title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header__crumb { color: var(--ink-faint); }
+.header__spacer { flex: 1; }
+
+/* the router renders each screen into .outlet; screens flex to fill it */
+.outlet {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.outlet > * { flex: 1 1 auto; min-height: 0; }
+
+.screen {
+  overflow-y: auto;
+  min-height: 0;
+  min-width: 0;
+}
+.screen--pad { padding: 28px 32px 56px; }
+.screen__wrap { max-width: 1080px; margin: 0 auto; }
+
+/* fade-up reveal on screen mount */
+.reveal { animation: reveal var(--med) var(--ease) both; }
+.reveal-1 { animation-delay: 40ms; }
+.reveal-2 { animation-delay: 90ms; }
+.reveal-3 { animation-delay: 140ms; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-1, .reveal-2, .reveal-3 { animation: none; }
+}
+
+/* ---- section heads ---- */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 30px 0 14px;
+}
+.section-head:first-child { margin-top: 0; }
+.section-head__kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+.section-head__rule { flex: 1; height: 1px; background: var(--line); }
+
+/* ---- the IDE: 3-pane grid ---- */
+.ide {
+  display: grid;
+  grid-template-columns: 218px 1fr;
+  grid-template-rows: 1fr;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-0);
+}
+.ide__side {
+  border-right: 1px solid var(--line);
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ide__work {
+  display: grid;
+  grid-template-rows: 1fr 8px minmax(140px, 38%);
+  min-height: 0;
+  min-width: 0;
+}
+.ide__editorwrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-inset);
+}
+.ide__gutter {
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  cursor: row-resize;
+  position: relative;
+}
+.ide__gutter::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px; height: 2px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+.ide__panel {
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* project / exam screen: a vertical stack of scorebar + work area */
+.projscreen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* split for project/exam: instructions + IDE */
+.work-split {
+  display: grid;
+  grid-template-columns: minmax(300px, 392px) 1fr;
+  flex: 1;
+  min-height: 0;
+}
+.work-split__desc {
+  border-right: 1px solid var(--line);
+  background: var(--bg-1);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* centered states */
+.centered {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* loading boot screen */
+.boot {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--bg-0);
+}
+.boot__mark {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.boot__mark::before {
+  content: "";
+  width: 12px; height: 12px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  animation: pulse 1.4s var(--ease) infinite;
+}
+.boot__msg { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { opacity: 0.55; box-shadow: 0 0 16px 3px var(--accent-glow); }
+}

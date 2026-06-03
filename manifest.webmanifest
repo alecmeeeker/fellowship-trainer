@@ -1,0 +1,19 @@
+{
+  "name": "Fellowship Trainer",
+  "short_name": "Trainer",
+  "description": "Browser-based trainer for a multi-level, project-based coding assessment — runs real Python in-browser via Pyodide.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1015",
+  "theme_color": "#0d1015",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
