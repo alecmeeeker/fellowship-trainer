@@ -2,10 +2,16 @@
 import { buildShell } from "./app-shell.js";
 import { startRouter } from "./router.js";
 import { runner } from "./engine/runner-client.js";
+import { themeManager } from "./services/theme-manager.js";
 import { loadProject, loadManifest, loadDrills, loadCurriculum } from "./services/content-loader.js";
 
 const root = document.getElementById("app");
 root.removeAttribute("aria-busy");
+
+// Reconcile <head> (webfont, meta) + <html> attributes with the saved theme.
+// The inline boot script in index.html already set the attributes pre-paint;
+// this injects the active theme's webfont and wires the X-Files flashlight beam.
+themeManager.init();
 
 const shell = buildShell(root);
 startRouter(shell);
@@ -15,4 +21,4 @@ startRouter(shell);
 void runner;
 
 // Debug / content-QA hook: lets a test harness drive the engine directly.
-window.__fellowship = { runner, loadProject, loadManifest, loadDrills, loadCurriculum };
+window.__fellowship = { runner, themeManager, loadProject, loadManifest, loadDrills, loadCurriculum };

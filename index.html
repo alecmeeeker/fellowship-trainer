@@ -11,6 +11,36 @@
   <!-- Mobile / installable-web-app chrome -->
   <meta name="theme-color" content="#0d1015" />
   <meta name="color-scheme" content="dark" />
+
+  <!-- THEME BOOT (FOUC kill): sets data-theme/-font-scale/-motion on <html>
+       BEFORE any CSS loads, so the first paint already uses the saved theme.
+       Reads the same localStorage key + settings.theme path the store writes.
+       Keep VALID/TC/DEFAULT in sync with js/services/theme-manager.js. -->
+  <script>
+    (function () {
+      var VALID = { dark: 1, win95: 1, springbreak95: 1, xfiles: 1 };
+      var TC = { dark: "#0d1015", win95: "#008080", springbreak95: "#ff1f8f", xfiles: "#16221b" };
+      var DEFAULT = "win95";
+      var d = document.documentElement;
+      try {
+        var raw = localStorage.getItem("fellowship-trainer:v1");
+        var s = raw ? JSON.parse(raw) : null;
+        var set = (s && s.settings) || {};
+        var t = VALID[set.theme] ? set.theme : DEFAULT;
+        d.setAttribute("data-theme", t);
+        if (set.fontScale === "s" || set.fontScale === "l") d.setAttribute("data-font-scale", set.fontScale);
+        if (set.reduceMotion) d.setAttribute("data-motion", "reduce");
+        var scheme = t === "dark" ? "dark" : "light";
+        d.style.colorScheme = scheme;
+        var mc = document.querySelector('meta[name="theme-color"]'); if (mc && TC[t]) mc.setAttribute("content", TC[t]);
+        var ms = document.querySelector('meta[name="color-scheme"]'); if (ms) ms.setAttribute("content", scheme);
+      } catch (e) {
+        d.setAttribute("data-theme", DEFAULT);
+        d.style.colorScheme = "light";
+      }
+    })();
+  </script>
+
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -36,6 +66,12 @@
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/settings.css" />
+  <!-- Themes: token overrides scoped to :root[data-theme="ID"]. The base
+       css/theme.css :root IS the "dark" theme, so no dark.css is needed. -->
+  <link rel="stylesheet" href="css/themes/win95.css" />
+  <link rel="stylesheet" href="css/themes/springbreak95.css" />
+  <link rel="stylesheet" href="css/themes/xfiles.css" />
   <!-- mobile.css MUST stay last: its media queries override the desktop rules above -->
   <link rel="stylesheet" href="css/mobile.css" />
 </head>

@@ -32,6 +32,27 @@ export function createEditor(parent, opts = {}) {
   let suppress = false;
   cm.on("change", () => { if (onChange && !suppress) onChange(cm.getValue()); });
 
+  // Themes swap the editor font (Lucida Console / Space Mono / Special Elite),
+  // which changes glyph advance-width — re-measure so the cursor stays aligned.
+  // Guarded by isConnected so a detached editor's stale listener is a no-op.
+  const onThemeChange = () => { if (cm.getWrapperElement().isConnected) cm.refresh(); };
+  window.addEventListener("themechange", onThemeChange);
+
+  // Webfont themes (Space Mono, Special Elite, …) load asynchronously. The
+  // editor first measures against the fallback face; when the real face swaps
+  // in, the browser reflows to new glyph widths but CM keeps the stale metrics,
+  // so the caret/selection misaligns until something re-measures. The
+  // themechange refresh above fires in the same tick the font <link> is added —
+  // before download — so re-measure once fonts are actually ready, and again
+  // whenever any later face finishes loading.
+  if (typeof document !== "undefined" && document.fonts) {
+    document.fonts.ready.then(() => { if (cm.getWrapperElement().isConnected) cm.refresh(); });
+    if (document.fonts.addEventListener) {
+      document.fonts.addEventListener("loadingdone",
+        () => { if (cm.getWrapperElement().isConnected) cm.refresh(); });
+    }
+  }
+
   return {
     cm,
     getValue: () => cm.getValue(),

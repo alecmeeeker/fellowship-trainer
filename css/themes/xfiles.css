@@ -1,0 +1,848 @@
+/* ============================================================================
+   THEME: X-Files — Classified Case File          id = "xfiles"
+   ----------------------------------------------------------------------------
+   CONCEPT: You are reading a haunted FBI case file at 3am by flashlight.
+   The WORLD is warm manila dossier paper on a dark government desk — clinical,
+   typed, stamped, redacted. Something in the file is faintly irradiating
+   phosphor-green where the beam falls. The body is luminous Kraft paper you can
+   actually read; the institutional office (rail) and the beige CRT terminal are
+   the cold night around it.
+
+   GREEN IS NOT A BACKGROUND — IT IS EVIDENCE, and it only appears when the
+   flashlight finds it. Interactive elements stay ink-on-paper and clinical UNTIL
+   the cursor beam (body::before, fed --beam-x/--beam-y from JS) sweeps over them,
+   at which point the phosphor aura blooms like a Geiger meter detecting something.
+
+   READABILITY DISCIPLINE (locked by the brief's contrast audit):
+     - Body ink #1C2420 on paper = 12.06:1 (AAA). All semantics on paper >= 4.5:1.
+     - --accent-2 is #1F5A3A (6.18:1) — the canonical green link/text color.
+       (The dossier's authored #157A45 measured only 4.09:1 and would FAIL AA; it
+        is corrected here so every green that touches paper is provably readable.)
+     - The bright phosphor #62F0A8 is QUARANTINED to CRT glass (#07120C, 13.22:1)
+       and the cold rail (#16221B). It NEVER appears on any --bg-0..3 paper surface.
+
+   Every rule is scoped under :root[data-theme="xfiles"] so the theme can never
+   leak and always out-specifies the dark base. APPEARANCE ONLY on shell elements.
+   ============================================================================ */
+
+
+/* ===========================================================================
+   1. TOKENS — the full contract. Values verbatim from the creative brief.
+   =========================================================================== */
+:root[data-theme="xfiles"] {
+  /* --- paper desk: warm manila, stacked sheets get brighter toward the top --- */
+  --bg-0: #DDD4BD;   /* stacked-paper desk blotter (body)                       */
+  --bg-1: #E7E0CE;   /* rail/header surface, default card                       */
+  --bg-2: #F2ECDD;   /* raised top sheet                                        */
+  --bg-3: #FBF7EC;   /* brightest sheet under the beam / button face            */
+  --bg-inset: #D2C8AE; /* carbon-paper inset (wells, scrollbar tracks)          */
+
+  /* --- rules: pencil-ruled federal-form lines on Kraft --- */
+  --line: #C3B996;
+  --line-soft: #D4CBB0;
+  --line-strong: #A99E78;
+
+  /* --- ink: typewriter carbon, three weights, all AA+ on paper --- */
+  --ink: #1C2420;        /* 12.06:1 on bg-1 (AAA)                              */
+  --ink-dim: #45504A;    /* 6.38:1  (AA+)                                      */
+  --ink-faint: #58635A;  /* 4.77:1  (AA small, captions/metadata only)         */
+
+  /* --- accent: irradiated evidence green (paper-safe variants) --- */
+  --accent: #1F9C5A;                       /* fill green; on #04140C = 5.37:1   */
+  --accent-2: #1F5A3A;                     /* canonical green link text 6.18:1  */
+  --accent-ink: #04140C;                   /* ink over accent fill              */
+  --accent-glow: rgba(46, 214, 122, 0.20); /* the aura — beam-gated bloom       */
+  --accent-line: rgba(31, 156, 90, 0.45);  /* phosphor edge                     */
+
+  /* --- semantics: forensic palette, all >= 4.5:1 on paper --- */
+  --ok: #1F5A3A;  --ok-bg: rgba(31, 156, 90, 0.16);  --ok-line: rgba(31, 156, 90, 0.42);
+  --bad: #8A2118; --bad-bg: rgba(138, 33, 24, 0.13); --bad-line: rgba(138, 33, 24, 0.42);
+  --warn: #7A4B0A; --warn-bg: rgba(160, 110, 20, 0.16);
+  --info: #1B5C7A;
+
+  /* --- cram: URGENT censor-red case flag --- */
+  --cram: #9A1B12;
+  --cram-soft: rgba(154, 27, 18, 0.14);
+  --cram-glow: rgba(214, 40, 28, 0.22);
+  --cram-line: rgba(154, 27, 18, 0.46);
+
+  /* --- fonts: Oswald stamp display, Special Elite typewriter mono, Public Sans body --- */
+  --sans: 'Public Sans', system-ui, -apple-system, sans-serif;
+  --mono: 'Special Elite', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --display: 'Oswald', 'Public Sans', sans-serif;
+
+  /* --- radii: sharp, bureaucratic --- */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+
+  /* --- shadows: warm paper-edge + cool desk drop --- */
+  --shadow-1: 0 1px 0 rgba(169, 158, 120, 0.55), 0 1px 3px rgba(28, 36, 32, 0.10);
+  --shadow-2: 0 2px 1px rgba(169, 158, 120, 0.5), 0 14px 30px rgba(28, 36, 32, 0.16), 0 4px 10px rgba(28, 36, 32, 0.10);
+  --shadow-pop: 0 18px 50px rgba(20, 28, 22, 0.30), 0 6px 16px rgba(20, 28, 22, 0.18);
+
+  /* --- motion --- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fast: 130ms;
+  --med: 260ms;
+
+  /* --- quarantined CRT phosphor (used ONLY on rail + terminal/CodeMirror) --- */
+  --crt-bg: #07120C;
+  --crt-phos: #62F0A8;
+  --rail-bg: #16221B;
+  --rail-ink: #C9D4CC;
+  --rail-ink-faint: #8FA197;
+}
+
+
+/* ===========================================================================
+   2. BACKDROP ATMOSPHERE
+      - body::before  = THE FLASHLIGHT BEAM (the soul of the theme)
+      - body::after   = Kraft-fiber grain + slow fog seam
+      Both are fixed, pointer-events:none, never under body copy contrast.
+      :root is <html>, so body::* are valid decorative chrome layers.
+   =========================================================================== */
+
+/* base desk fill (reset.css paints body bg-0; reinforce + warm vignette base) */
+:root[data-theme="xfiles"] body {
+  background: var(--bg-0);
+}
+
+/* Register the beam coordinates as animatable <length-percentage> custom props so
+   the gradient CENTER can transition — this is what produces the ~120ms "real
+   beam sweep" lag the brief calls the soul of the theme. Without @property a var
+   used inside background: is not interpolable and the beam would snap instantly.
+   Falls back gracefully (instant move) in engines lacking @property. */
+@property --beam-x { syntax: "<length-percentage>"; inherits: true; initial-value: 50%; }
+@property --beam-y { syntax: "<length-percentage>"; inherits: true; initial-value: 40%; }
+
+/* THE FLASHLIGHT BEAM — warm cream light tracking the cursor across the manila
+   page. JS sets --beam-x/--beam-y (in px) on <html> on mousemove; sensible %
+   defaults make it work before the first move. soft-light keeps it a LIGHT, not
+   a wash — it brightens paper where it falls without crushing ink contrast. */
+:root[data-theme="xfiles"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  background: radial-gradient(
+    220px 220px at var(--beam-x, 50%) var(--beam-y, 40%),
+    rgba(251, 247, 236, 0.55),
+    rgba(251, 247, 236, 0.12) 45%,
+    transparent 70%
+  );
+  mix-blend-mode: soft-light;
+}
+/* the beam-sweep lag — gated so reduced-motion users get an instant, jitter-free
+   spotlight (the var still updates; only the easing is removed). */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="xfiles"] body::before {
+    transition: --beam-x 120ms var(--ease), --beam-y 120ms var(--ease);
+  }
+}
+
+/* MANILA PAPER GRAIN + FOG SEAM. fractalNoise gives Kraft fiber (opacity 0.05,
+   barely there, never harms reading). A bottom-anchored fog radial sits under
+   the page and drifts slowly. z-index:1 keeps it beneath all real content. */
+:root[data-theme="xfiles"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(ellipse at 50% 120%, rgba(22, 34, 27, 0.07), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+}
+
+/* let the beam + fog show through the reading scaffold; cards repaint opaque */
+:root[data-theme="xfiles"] .outlet,
+:root[data-theme="xfiles"] .screen { background: transparent; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="xfiles"] body::after {
+    animation: xf-fogdrift 48s ease-in-out infinite;
+  }
+  @keyframes xf-fogdrift {
+    0%, 100% { background-position: -2% 0, 0 0; }
+    50%      { background-position:  2% 0, 0 0; }
+  }
+}
+
+
+/* ===========================================================================
+   3. RAIL — INSTITUTIONAL OFFICE AT NIGHT
+      The one permitted dark surface besides the terminal. Cold #16221B bureau
+      wall, cool desaturated ink, phosphor accent only on active marks.
+      APPEARANCE ONLY — no layout props touched.
+   =========================================================================== */
+/* APPEARANCE ONLY — no position/display/flex/width/height here. mobile.css owns
+   .rail geometry and loads after us; the contract forbids position on .rail.
+   The fog seam is anchored to the .rail__foot component instead (see below). */
+:root[data-theme="xfiles"] .rail {
+  background: var(--rail-bg);
+  border-right: 1px solid #0E1712;
+  box-shadow: inset -14px 0 24px -18px #000;
+}
+:root[data-theme="xfiles"] .rail__brand {
+  border-bottom: 1px solid rgba(201, 212, 204, 0.14);
+}
+:root[data-theme="xfiles"] .rail__mark {
+  color: var(--rail-ink);
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+/* circled-X / flashlight-into-fog seal — a monoline cool-ink diamond eye */
+:root[data-theme="xfiles"] .rail__mark::before {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow), 0 0 0 1px rgba(98, 240, 168, 0.35);
+  border-radius: 1px;
+}
+:root[data-theme="xfiles"] .rail__sub { color: var(--rail-ink-faint); }
+/* .rail__foot is a permitted component (not a shell element) — position:relative
+   here is allowed and anchors the fog seam without touching .rail geometry. */
+:root[data-theme="xfiles"] .rail__foot {
+  border-top: 1px solid rgba(201, 212, 204, 0.14);
+  position: relative;
+}
+/* bottom fog seam rising off the office floor (overflows upward from the foot) */
+:root[data-theme="xfiles"] .rail__foot::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 130%, rgba(98, 240, 168, 0.06), transparent 62%);
+}
+
+/* nav text: cool ink on the night wall */
+:root[data-theme="xfiles"] .navitem {
+  color: var(--rail-ink);
+  position: relative;
+}
+:root[data-theme="xfiles"] .navitem__glyph { color: var(--rail-ink-faint); }
+:root[data-theme="xfiles"] .navitem__count {
+  color: var(--rail-ink-faint);
+  background: rgba(255, 255, 255, 0.05);
+}
+:root[data-theme="xfiles"] .nav-group-label { color: var(--rail-ink-faint); }
+:root[data-theme="xfiles"] .navitem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #EAF1EC;
+}
+
+/* ACTIVE = paranormal aura: green ring + 18px glow, the file lit under detection */
+:root[data-theme="xfiles"] .navitem.is-active {
+  background: rgba(31, 156, 90, 0.10);
+  color: #EAF1EC;
+  box-shadow: 0 0 0 1px var(--accent-line), 0 0 18px var(--accent-glow);
+}
+:root[data-theme="xfiles"] .navitem.is-active::before {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+:root[data-theme="xfiles"] .navitem.is-active .navitem__glyph { color: var(--accent); }
+
+/* URGENT cram nav item swaps to censor-red detection */
+:root[data-theme="xfiles"] .navitem--urgent { color: #F2C7C2; }
+:root[data-theme="xfiles"] .navitem--urgent .navitem__glyph { color: var(--cram-glow); }
+:root[data-theme="xfiles"] .navitem--urgent.is-active {
+  background: rgba(154, 27, 18, 0.18);
+  box-shadow: 0 0 0 1px var(--cram-line), 0 0 18px var(--cram-glow);
+}
+:root[data-theme="xfiles"] .navitem--urgent.is-active::before {
+  background: var(--cram);
+  box-shadow: 0 0 8px var(--cram-glow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* theremin detection swell, fired once when an item becomes active */
+  :root[data-theme="xfiles"] .navitem.is-active .navitem__glyph {
+    animation: xf-aurawell 700ms var(--ease) 1;
+  }
+  @keyframes xf-aurawell {
+    0%   { text-shadow: 0 0 0 transparent; transform: scale(0.94); }
+    60%  { text-shadow: 0 0 10px var(--accent-glow); }
+    100% { text-shadow: 0 0 5px var(--accent-glow); transform: scale(1); }
+  }
+  :root[data-theme="xfiles"] .navitem--urgent.is-active .navitem__glyph {
+    animation: xf-aurawell-red 1.6s var(--ease) infinite;
+  }
+  @keyframes xf-aurawell-red {
+    0%, 100% { text-shadow: 0 0 4px var(--cram-glow); }
+    50%      { text-shadow: 0 0 13px var(--cram-glow); }
+  }
+}
+
+
+/* ===========================================================================
+   4. HEADER — TOP OF AN FBI FORM
+      Cold-Case-Blue rule, Oswald uppercase title, monospaced case-no metadata.
+   =========================================================================== */
+:root[data-theme="xfiles"] .header {
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--info);
+  box-shadow: 0 1px 0 var(--line-soft);
+}
+:root[data-theme="xfiles"] .header__title {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 600;
+  color: var(--ink);
+}
+:root[data-theme="xfiles"] .header__crumb { color: var(--ink-faint); }
+
+
+/* ===========================================================================
+   5. TYPOGRAPHY — OSWALD STAMP HEADERS (no green on paper)
+   =========================================================================== */
+:root[data-theme="xfiles"] .h1 {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 600;
+  color: var(--ink);
+}
+:root[data-theme="xfiles"] .h2 {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  color: var(--ink);
+}
+:root[data-theme="xfiles"] .lead { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .muted { color: var(--ink-faint); }
+:root[data-theme="xfiles"] .md__h { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
+:root[data-theme="xfiles"] .md__h3 { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .md { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .md__list li::before { color: var(--accent-2); }
+:root[data-theme="xfiles"] .md__code {
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  color: var(--accent-2);
+}
+:root[data-theme="xfiles"] .md__quote {
+  border-left: 2px solid var(--info);
+  background: rgba(27, 92, 122, 0.08);
+  color: var(--ink-dim);
+}
+
+/* 'THE TRUTH IS OUT THERE' — ghosted opening title card across empty states */
+:root[data-theme="xfiles"] .empty {
+  color: var(--ink-faint);
+  position: relative;
+}
+:root[data-theme="xfiles"] .empty .h1 {
+  font-family: 'Special Elite', var(--mono);
+  text-transform: none;
+  letter-spacing: 0.22em;
+  color: var(--ink);
+  opacity: 0.12;
+}
+
+
+/* ===========================================================================
+   6. SECTION HEADS — FBI CASE-FILE FORM STRIP + CLASSIFIED STAMP
+   =========================================================================== */
+:root[data-theme="xfiles"] .section-head {
+  position: relative;
+  flex-wrap: wrap;
+}
+:root[data-theme="xfiles"] .section-head__kicker {
+  font-family: var(--mono);
+  color: var(--accent-2);
+  letter-spacing: 0.18em;
+}
+:root[data-theme="xfiles"] .section-head__rule {
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 10px);
+}
+/* case-file form strip on top of every section */
+:root[data-theme="xfiles"] .section-head::before {
+  content: "CASE NO. X-________ // SECTION";
+  position: absolute;
+  top: -16px; left: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--info);
+  padding-bottom: 5px;
+  width: 100%;
+}
+/* CLASSIFIED rubber stamp — ink-starved, rotated, misregistered */
+:root[data-theme="xfiles"] .section-head::after {
+  content: "CLASSIFIED";
+  position: absolute;
+  top: 6px; right: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--bad);
+  transform: rotate(-7deg);
+  opacity: 0.42;
+  padding: 3px 10px;
+  border: 2px solid var(--bad);
+  border-radius: 2px;
+  text-shadow: 0.4px 0 0 rgba(138, 33, 24, 0.3);
+  pointer-events: none;
+  /* eroded, ink-starved edge */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12 0.18' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.6 -0.35'/%3E%3CfeComposite operator='in' in='SourceGraphic'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23fff' filter='url(%23e)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='40'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12 0.18' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.6 -0.35'/%3E%3CfeComposite operator='in' in='SourceGraphic'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23fff' filter='url(%23e)'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="xfiles"] .section-head::after { animation: xf-stamppress 420ms var(--ease) 1; }
+  @keyframes xf-stamppress {
+    0%   { opacity: 0; transform: rotate(-7deg) scale(1.04); }
+    100% { opacity: 0.42; transform: rotate(-7deg) scale(1); }
+  }
+}
+
+
+/* ===========================================================================
+   7. CARDS — THE TOP SHEET CLIPPED TO THE FILE
+      ::before draws a manila folder tab; warm paper shadow.
+   =========================================================================== */
+:root[data-theme="xfiles"] .card {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  position: relative;
+}
+/* manila folder TAB on the top sheet */
+:root[data-theme="xfiles"] .card::before {
+  content: "";
+  position: absolute;
+  top: -9px; left: 22px;
+  width: 54px; height: 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  pointer-events: none;
+}
+:root[data-theme="xfiles"] a.card:hover,
+:root[data-theme="xfiles"] button.card:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-2);
+}
+:root[data-theme="xfiles"] .card__title { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
+:root[data-theme="xfiles"] .card__meta { color: var(--ink-faint); }
+:root[data-theme="xfiles"] .card__body { color: var(--ink-dim); }
+
+/* accent card: phosphor edge + UV binder-clip corner glyph that lights in beam */
+:root[data-theme="xfiles"] .card--accent {
+  border-color: var(--accent-line);
+}
+:root[data-theme="xfiles"] .card--accent::after {
+  content: "❖";
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 12px;
+  color: var(--accent-2);
+  opacity: 0.55;
+  transition: text-shadow var(--med) var(--ease), opacity var(--med) var(--ease);
+  pointer-events: none;
+}
+:root[data-theme="xfiles"] .card--accent:hover::after {
+  opacity: 1;
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* cram card: URGENT red stamp + cram-soft fill */
+:root[data-theme="xfiles"] .card--cram {
+  border-color: var(--cram-line);
+  border-left: 4px solid var(--cram);
+  background: var(--cram-soft);
+}
+
+
+/* ===========================================================================
+   8. BUTTONS — FEDERAL-FORM PUSHBUTTONS, green hover bloom is BEAM-GATED
+      (the green = "found" payoff fires on :hover, when the beam is over it).
+   =========================================================================== */
+:root[data-theme="xfiles"] .btn {
+  background: var(--bg-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow-1);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+:root[data-theme="xfiles"] .btn:hover {
+  background: var(--bg-3);
+  border-color: var(--accent-line);
+  box-shadow: 0 0 12px var(--accent-glow), var(--shadow-1);
+}
+:root[data-theme="xfiles"] .btn:active { transform: translateY(1px); }
+
+:root[data-theme="xfiles"] .btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+/* HARDCODED LITERAL OVERRIDE (components.css:76 — was #62ecd2 teal) */
+:root[data-theme="xfiles"] .btn--primary:hover {
+  background: #23ad65;
+  border-color: #23ad65;
+  box-shadow: 0 0 14px var(--accent-glow), var(--shadow-1);
+}
+
+:root[data-theme="xfiles"] .btn--ghost { background: transparent; border-color: var(--line); }
+:root[data-theme="xfiles"] .btn--ghost:hover { background: var(--bg-2); border-color: var(--accent-line); }
+
+:root[data-theme="xfiles"] .btn--danger { background: var(--bg-3); border-color: var(--bad-line); color: var(--bad); }
+:root[data-theme="xfiles"] .btn--danger:hover { background: var(--bad-bg); border-color: var(--bad); box-shadow: 0 0 12px var(--cram-glow), var(--shadow-1); }
+
+
+/* ===========================================================================
+   9. PILLS — TYPEWRITER EVIDENCE LABELS, taped-on (slight rotation)
+   =========================================================================== */
+:root[data-theme="xfiles"] .pill {
+  font-family: 'Special Elite', var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  background: var(--bg-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  color: var(--ink-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  transform: rotate(-0.4deg);
+}
+:root[data-theme="xfiles"] .pill--ok { color: var(--ok); border-color: var(--ok-line); background: var(--ok-bg); }
+:root[data-theme="xfiles"] .pill--bad { color: var(--bad); border-color: var(--bad-line); background: var(--bad-bg); }
+:root[data-theme="xfiles"] .pill--warn { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+/* accent pill: green text + faint phosphor underglow */
+:root[data-theme="xfiles"] .pill--accent {
+  color: var(--accent-2);
+  border-color: var(--accent-line);
+  background: var(--accent-glow);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 0 6px var(--accent-glow);
+}
+:root[data-theme="xfiles"] .pill--solid { background: var(--bg-inset); color: var(--ink-dim); border-color: transparent; }
+
+
+/* ===========================================================================
+   10. DOTS / ENGINE / STREAK / TABS / PANELS / CALLOUTS
+   =========================================================================== */
+:root[data-theme="xfiles"] .dot { background: var(--ink-faint); }
+:root[data-theme="xfiles"] .dot--ok { background: var(--ok); }
+:root[data-theme="xfiles"] .dot--bad { background: var(--bad); }
+:root[data-theme="xfiles"] .dot--warn { background: var(--warn); }
+:root[data-theme="xfiles"] .dot--accent { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+
+:root[data-theme="xfiles"] .engine { color: var(--ink-faint); border: 1px solid var(--line); background: var(--bg-2); }
+:root[data-theme="xfiles"] .engine.is-ready { color: var(--ok); border-color: var(--ok-line); }
+:root[data-theme="xfiles"] .engine.is-loading { color: var(--warn); border-color: var(--warn); }
+:root[data-theme="xfiles"] .engine.is-error { color: var(--bad); border-color: var(--bad-line); }
+
+:root[data-theme="xfiles"] .streak { color: var(--ink-dim); font-family: var(--mono); }
+:root[data-theme="xfiles"] .streak__flame { color: var(--warn); }
+:root[data-theme="xfiles"] .streak__n { color: var(--ink); }
+
+:root[data-theme="xfiles"] .tabs { background: var(--bg-1); border-bottom: 1px solid var(--line); }
+:root[data-theme="xfiles"] .tab { color: var(--ink-faint); font-family: var(--mono); }
+:root[data-theme="xfiles"] .tab:hover { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .tab.is-active { color: var(--ink); border-bottom-color: var(--accent); }
+:root[data-theme="xfiles"] .tab__badge { background: var(--bg-inset); color: var(--ink-dim); }
+
+:root[data-theme="xfiles"] .panel-head { background: var(--bg-1); border-bottom: 1px solid var(--line); color: var(--ink-faint); }
+:root[data-theme="xfiles"] .nav-group-label,
+:root[data-theme="xfiles"] .section-head__kicker { font-family: var(--mono); }
+
+:root[data-theme="xfiles"] .callout { background: var(--bg-2); border: 1px solid var(--line); color: var(--ink-dim); }
+:root[data-theme="xfiles"] .callout--warn { border-color: var(--warn); background: var(--warn-bg); }
+:root[data-theme="xfiles"] .callout--warn .callout__glyph { color: var(--warn); }
+:root[data-theme="xfiles"] .callout--tip { border-color: var(--accent-line); background: var(--accent-glow); }
+:root[data-theme="xfiles"] .callout--tip .callout__glyph { color: var(--accent-2); }
+:root[data-theme="xfiles"] .callout--info { border-color: var(--info); background: rgba(27, 92, 122, 0.07); }
+:root[data-theme="xfiles"] .callout--info .callout__glyph { color: var(--info); }
+
+
+/* ===========================================================================
+   11. PROGRESS BARS / PIPS / SPINNER — EVIDENCE PROGRESS
+   =========================================================================== */
+:root[data-theme="xfiles"] .bar { background: var(--bg-inset); }
+:root[data-theme="xfiles"] .bar__fill {
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+:root[data-theme="xfiles"] .bar__fill--ok { background: linear-gradient(90deg, var(--ok), var(--accent)); }
+
+:root[data-theme="xfiles"] .pip { background: var(--bg-3); border: 1px solid var(--line); }
+:root[data-theme="xfiles"] .pip.is-done { background: var(--accent); border-color: var(--accent); }
+:root[data-theme="xfiles"] .pip.is-current { border-color: var(--accent); background: var(--accent-glow); }
+:root[data-theme="xfiles"] .pip.is-partial { background: var(--warn); border-color: var(--warn); }
+
+:root[data-theme="xfiles"] .spinner { border: 2px solid var(--line-strong); border-top-color: var(--accent); }
+
+
+/* ===========================================================================
+   12. TEST RESULTS — FORENSIC VERDICT STAMPS
+   =========================================================================== */
+:root[data-theme="xfiles"] .testrow { border-bottom: 1px solid var(--line-soft); }
+:root[data-theme="xfiles"] .testrow:hover { background: var(--bg-2); }
+:root[data-theme="xfiles"] .testrow--pass .testrow__icon { color: var(--ok); }
+:root[data-theme="xfiles"] .testrow--fail .testrow__icon,
+:root[data-theme="xfiles"] .testrow--error .testrow__icon { color: var(--bad); }
+:root[data-theme="xfiles"] .testrow--skip .testrow__icon { color: var(--ink-faint); }
+
+/* CONFIRMED verdict on pass */
+:root[data-theme="xfiles"] .testrow--pass .testrow__name::after {
+  content: "  CONFIRMED";
+  font-family: var(--mono);
+  color: var(--ok);
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+/* INCONCLUSIVE verdict + censor bar on fail */
+:root[data-theme="xfiles"] .testrow--fail .testrow__name::before,
+:root[data-theme="xfiles"] .testrow--error .testrow__name::before {
+  content: "";
+  display: inline-block;
+  width: 2.4em; height: 0.9em;
+  background: var(--bad);
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 1px;
+}
+:root[data-theme="xfiles"] .testrow--fail .testrow__name::after,
+:root[data-theme="xfiles"] .testrow--error .testrow__name::after {
+  content: "  INCONCLUSIVE";
+  font-family: var(--mono);
+  color: var(--bad);
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+:root[data-theme="xfiles"] .trace { background: var(--bg-inset); color: var(--bad); border-left: 2px solid var(--bad-line); }
+:root[data-theme="xfiles"] .trace__msg { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .runbar { background: var(--bg-1); border-bottom: 1px solid var(--line); }
+:root[data-theme="xfiles"] .runbar__score--ok { color: var(--ok); }
+:root[data-theme="xfiles"] .runbar__score--bad { color: var(--bad); }
+
+
+/* ===========================================================================
+   13. CRT GLASS — TERMINAL + CodeMirror (QUARANTINED bright phosphor)
+      The 1990s beige federal monitor. #07120C glass, #62F0A8 phosphor (13.22:1),
+      scanlines, inner vignette, phosphor-blink cursor. NEVER leaks to paper.
+   =========================================================================== */
+:root[data-theme="xfiles"] .terminal {
+  background: var(--crt-bg);
+  color: var(--crt-phos);
+  position: relative;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 3px rgba(98, 240, 168, 0.30);
+}
+:root[data-theme="xfiles"] .terminal__empty { color: rgba(98, 240, 168, 0.45); }
+:root[data-theme="xfiles"] .terminal__err { color: #FF7A66; text-shadow: 0 0 3px rgba(214, 40, 28, 0.4); }
+/* horizontal scanline overlay */
+:root[data-theme="xfiles"] .terminal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.04) 3px);
+}
+
+/* CodeMirror — the same CRT glass. HARDCODED LITERAL OVERRIDE (color #d6dce6 !important) */
+:root[data-theme="xfiles"] .CodeMirror {
+  background: var(--crt-bg) !important;
+  color: var(--crt-phos) !important;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 3px rgba(98, 240, 168, 0.30);
+}
+:root[data-theme="xfiles"] .CodeMirror-gutters {
+  background: #050D08 !important;
+  border-right: 1px solid rgba(98, 240, 168, 0.18) !important;
+}
+:root[data-theme="xfiles"] .CodeMirror-linenumber { color: rgba(98, 240, 168, 0.40) !important; }
+/* HARDCODED LITERAL OVERRIDE (cursor was var(--accent) !important) */
+:root[data-theme="xfiles"] .CodeMirror-cursor { border-left: 1.6px solid var(--crt-phos) !important; }
+/* HARDCODED LITERAL OVERRIDE (activeline was rgba white !important) */
+:root[data-theme="xfiles"] .CodeMirror-activeline-background { background: rgba(98, 240, 168, 0.06) !important; }
+/* HARDCODED LITERAL OVERRIDE (selection was rgba teal !important) */
+:root[data-theme="xfiles"] .CodeMirror-selected { background: rgba(98, 240, 168, 0.18) !important; }
+:root[data-theme="xfiles"] .CodeMirror-matchingbracket { color: #B6FFD8 !important; border-bottom: 1px solid var(--crt-phos); }
+
+/* token palette tuned within the phosphor-green family (NOT !important — specificity is enough) */
+:root[data-theme="xfiles"] .cm-s-default .cm-keyword  { color: #5AE0B0; font-weight: 700; }
+:root[data-theme="xfiles"] .cm-s-default .cm-def      { color: #9BFFD2; }
+:root[data-theme="xfiles"] .cm-s-default .cm-variable { color: #C7F5DE; }
+:root[data-theme="xfiles"] .cm-s-default .cm-variable-2 { color: #88D9B4; }
+:root[data-theme="xfiles"] .cm-s-default .cm-property { color: #7FE8C0; }
+:root[data-theme="xfiles"] .cm-s-default .cm-string   { color: #B6FF7A; }
+:root[data-theme="xfiles"] .cm-s-default .cm-number   { color: #E8FF6B; }
+:root[data-theme="xfiles"] .cm-s-default .cm-comment  { color: rgba(98, 240, 168, 0.45); font-style: italic; }
+:root[data-theme="xfiles"] .cm-s-default .cm-builtin  { color: #62F0A8; }
+:root[data-theme="xfiles"] .cm-s-default .cm-operator { color: #9BFFD2; }
+:root[data-theme="xfiles"] .cm-s-default .cm-meta     { color: rgba(98, 240, 168, 0.55); }
+
+/* HARDCODED LITERAL OVERRIDE (md__pre code was #cdd5e1) — code wells become CRT glass */
+:root[data-theme="xfiles"] .md__pre {
+  background: var(--crt-bg);
+  border: 1px solid rgba(98, 240, 168, 0.20);
+  border-left: 2px solid var(--accent);
+}
+:root[data-theme="xfiles"] .md__pre code { color: var(--crt-phos); text-shadow: 0 0 3px rgba(98, 240, 168, 0.30); }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="xfiles"] .CodeMirror-cursor { animation: xf-phosblink 1.1s steps(1, end) infinite; }
+  @keyframes xf-phosblink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.3; } }
+}
+
+
+/* ===========================================================================
+   14. CRAM — URGENT CASE (censor-red). HARDCODED LITERAL OVERRIDES x5.
+   =========================================================================== */
+/* HARDCODED LITERAL OVERRIDE (gradient contained rgba(240,160,107,0.04)) */
+:root[data-theme="xfiles"] .cram-hero {
+  background: linear-gradient(105deg, var(--cram-glow) 0%, rgba(154, 27, 18, 0.05) 100%);
+  border: 1px solid var(--cram-line);
+  border-left: 4px solid var(--cram);
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+/* HARDCODED LITERAL OVERRIDE (box-shadow rgba(240,160,107,0.18)) */
+:root[data-theme="xfiles"] .cram-hero:hover {
+  box-shadow: 0 10px 32px var(--cram-glow);
+  border-color: var(--cram);
+}
+/* HARDCODED LITERAL OVERRIDE (background rgba(240,160,107,0.12)) */
+:root[data-theme="xfiles"] .cram-hero__flag {
+  color: var(--cram);
+  background: var(--cram-soft);
+  border: 1px solid var(--cram-line);
+  font-family: var(--mono);
+}
+:root[data-theme="xfiles"] .cram-hero__title { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
+:root[data-theme="xfiles"] .cram-hero__sub { color: var(--ink-dim); }
+:root[data-theme="xfiles"] .cram-hero__sub b { color: var(--cram); }
+:root[data-theme="xfiles"] .cram-hero__cta { color: var(--cram); border-left: 1px solid var(--cram-line); }
+/* TRUST NO ONE stamp on the urgent hero */
+:root[data-theme="xfiles"] .cram-hero::after {
+  content: "TRUST NO ONE";
+  position: absolute;
+  top: 8px; right: 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--cram);
+  transform: rotate(-7deg);
+  opacity: 0.40;
+  padding: 3px 10px;
+  border: 2px solid var(--cram);
+  border-radius: 2px;
+  text-shadow: 0.4px 0 0 rgba(154, 27, 18, 0.3);
+  pointer-events: none;
+}
+
+/* HARDCODED LITERAL OVERRIDE (cram-pointer:hover was rgba(240,160,107,0.20)) */
+:root[data-theme="xfiles"] .cram-pointer {
+  background: var(--cram-glow);
+  border: 1px solid var(--cram-line);
+  border-left: 3px solid var(--cram);
+  color: var(--ink);
+}
+:root[data-theme="xfiles"] .cram-pointer:hover { background: rgba(154, 27, 18, 0.22); }
+
+/* cram steps */
+:root[data-theme="xfiles"] .cram__step:hover { background: var(--bg-2); }
+:root[data-theme="xfiles"] .cram__step--lesson.is-required { border-left-color: var(--accent); }
+:root[data-theme="xfiles"] .cram__step--drill.is-required { border-left-color: var(--info); }
+:root[data-theme="xfiles"] .cram__step--mock.is-required { border-left-color: var(--cram); }
+:root[data-theme="xfiles"] .cram__step--break { border-left-color: var(--ink-faint); background: var(--bg-inset); }
+:root[data-theme="xfiles"] .cram__step-cb:hover { border-color: var(--cram); }
+:root[data-theme="xfiles"] .cram__step-label:hover { color: var(--cram); }
+/* HARDCODED LITERAL OVERRIDE (cram__step-go:hover was rgba(240,160,107,0.20)) */
+:root[data-theme="xfiles"] .cram__step-go { color: var(--cram); }
+:root[data-theme="xfiles"] .cram__step-go:hover { background: rgba(154, 27, 18, 0.22); }
+
+/* LIGHT-THEME FIX: components.css hardcodes color-scheme:dark on the exam input */
+:root[data-theme="xfiles"] .cram__exam-input { color-scheme: light; }
+
+
+/* ===========================================================================
+   15. SETTINGS POPOVER + THEME SWATCHES (built from .card/.btn/.tab/.pill)
+   =========================================================================== */
+:root[data-theme="xfiles"] .settings-pop {
+  background: var(--bg-2);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+}
+:root[data-theme="xfiles"] .settings-pop__label { color: var(--ink-faint); font-family: var(--mono); }
+:root[data-theme="xfiles"] .settings-pop__sep { background: var(--line); }
+:root[data-theme="xfiles"] .theme-swatch { background: var(--bg-3); border: 1px solid var(--line); color: var(--ink); }
+:root[data-theme="xfiles"] .theme-swatch:hover { border-color: var(--accent-line); }
+:root[data-theme="xfiles"] .theme-swatch.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 0 12px var(--accent-glow);
+}
+:root[data-theme="xfiles"] .theme-swatch__name { color: var(--ink-dim); font-family: var(--mono); }
+:root[data-theme="xfiles"] .theme-swatch.is-selected .theme-swatch__name { color: var(--ink); }
+
+
+/* ===========================================================================
+   16. SCROLLBARS — CARBON-PAPER GUTTERS (CRT-green inside the glass)
+   =========================================================================== */
+:root[data-theme="xfiles"] ::-webkit-scrollbar { width: 11px; height: 11px; }
+:root[data-theme="xfiles"] ::-webkit-scrollbar-track { background: var(--bg-inset); }
+:root[data-theme="xfiles"] ::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 2px solid var(--bg-inset);
+  border-radius: 2px;
+  background-clip: padding-box;
+}
+:root[data-theme="xfiles"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: padding-box;
+}
+:root[data-theme="xfiles"] * { scrollbar-color: var(--line-strong) var(--bg-inset); }
+
+/* inside CRT glass: translucent phosphor thumb to stay in the monitor world */
+:root[data-theme="xfiles"] .terminal::-webkit-scrollbar-track,
+:root[data-theme="xfiles"] .CodeMirror ::-webkit-scrollbar-track { background: #050D08; }
+:root[data-theme="xfiles"] .terminal::-webkit-scrollbar-thumb,
+:root[data-theme="xfiles"] .CodeMirror ::-webkit-scrollbar-thumb {
+  background: rgba(98, 240, 168, 0.30);
+  border: 2px solid #050D08;
+  background-clip: padding-box;
+}
+:root[data-theme="xfiles"] .terminal,
+:root[data-theme="xfiles"] .CodeMirror { scrollbar-color: rgba(98, 240, 168, 0.30) #050D08; }
+
+
+/* ===========================================================================
+   17. FOCUS / SELECTION — green detection on focus
+   =========================================================================== */
+:root[data-theme="xfiles"] :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+:root[data-theme="xfiles"] ::selection { background: var(--accent-glow); color: var(--ink); }
+
+/* CRT surfaces select in phosphor */
+:root[data-theme="xfiles"] .terminal ::selection,
+:root[data-theme="xfiles"] .CodeMirror ::selection { background: rgba(98, 240, 168, 0.25); color: #EAFFF3; }
+
+
+/* ===========================================================================
+   18. TOAST — case-note slip
+   =========================================================================== */
+:root[data-theme="xfiles"] .toast {
+  background: var(--bg-3);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  color: var(--ink);
+  font-family: var(--mono);
+}
+:root[data-theme="xfiles"] .toast--bad { border-color: var(--bad-line); color: var(--bad); }
+:root[data-theme="xfiles"] .toast--ok { border-color: var(--ok-line); color: var(--ok); }

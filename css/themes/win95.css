@@ -1,0 +1,1047 @@
+/* ============================================================================
+ * win95.css — THEME: "Windows 95 (chrome & teal)"   (data-theme="win95")
+ * ----------------------------------------------------------------------------
+ * CONCEPT: You are sitting at a beige PC in 1996. The entire app is ONE Windows
+ * 98 application window floating on the empty Desktop Teal void. Silver extruded
+ * plastic chrome where every button is a real physical object that rises toward
+ * your thumb and clunks inward when you push it; a navy->cyan title bar; the left
+ * rail IS the Start menu / vertical taskbar; the code editor is a sunken white
+ * Notepad well. Bright, chiseled, utterly readable — the literal opposite of the
+ * dark theme the user is sick of.
+ *
+ * THE ONE UNFORGETTABLE THING: every .btn / .navitem / scrollbar thumb is built
+ * from a TRUE 4-edge double bevel (four box-shadow insets, not a fake gradient).
+ * On :active EVERY inset swaps sign so the control visibly SINKS, the label nudges
+ * translate(1px,1px), transition:none — a hard mechanical clunk with zero easing.
+ * You don't click these buttons, you PUSH them.
+ *
+ * RULES OBEYED:
+ *  - Every selector is scoped under :root[data-theme="win95"] (no leaks).
+ *  - Appearance only on structural shell elements (.shell .rail .main .header
+ *    .outlet) — no display/position/width/height/flex/grid on them. mobile.css
+ *    owns geometry and loads after this file.
+ *  - Backdrop atmosphere lives on fixed pointer-events:none pseudo-layers; every
+ *    reading surface paints a solid fill so body text stays >= 4.5:1 (AA).
+ *  - Ambient/infinite motion gated behind prefers-reduced-motion: no-preference.
+ *  - This is a LIGHT theme; color-scheme:light restored on the date input.
+ * ========================================================================== */
+
+/* ============================================================================
+ * 1. TOKENS — full contract, verbatim from the brief.
+ * A missing token would fall back to the dark base and leak charcoal/teal, so
+ * every single one is declared here.
+ * ========================================================================== */
+:root[data-theme="win95"] {
+  /* canvas — Desktop Teal void + the silver window chrome (light to raised) */
+  --bg-0: #008080;   /* pure Desktop Teal — the empty 1996 desktop */
+  --bg-1: #d4d0c8;   /* warm silver — rail / panels / dialog body */
+  --bg-2: #c0c0c0;   /* classic 3D Objects grey — button faces */
+  --bg-3: #dfdcd4;   /* bright highlight silver — hover face / chips */
+  --bg-inset: #ffffff; /* paper white — sunken wells (Notepad, progress) */
+
+  /* lines — the three bevel tones: light highlight / mid / dark shadow */
+  --line: #808080;        /* mid grey hairline */
+  --line-soft: #ffffff;   /* top-left highlight edge */
+  --line-strong: #404040; /* bottom-right shadow edge */
+
+  /* ink — hardened for WCAG where Win95 itself failed.
+   * #000 on silver ~16-17:1 (AAA). dim ~5.0:1, faint ~4.6:1 (both pass AA).
+   * The real Win95 disabled #808080 is BANNED for body/label text. */
+  --ink: #000000;
+  /* AUDIT FIX: brief claimed dim #5a5a52 = ~5.0:1 on silver; measured WCAG is
+   * 3.82:1 on #c0c0c0 (tab labels / swatch names sit here) — FAILS AA. Darkened
+   * to #4d4a43 -> 4.86:1 on #c0c0c0, 5.75:1 on #d4d0c8 (both pass AA 4.5:1). */
+  --ink-dim: #4d4a43;
+  /* AUDIT FIX: brief claimed faint #6e6a62 = ~4.6:1 on silver; measured WCAG is
+   * 2.96:1 on #c0c0c0 / 3.50:1 on #d4d0c8 — FAILS AA. Darkened to #565249 ->
+   * 5.06:1 on #d4d0c8 (every small-text use of faint sits on bg-1); 4.28:1 on
+   * #c0c0c0 where it only carries the large navitem glyph (AA-large 3:1 OK). */
+  --ink-faint: #565249;
+
+  /* accent — Win95 navy + active-titlebar cyan */
+  --accent: #000080;
+  --accent-2: #1084d0;
+  --accent-ink: #ffffff;
+  --accent-glow: rgba(0, 0, 128, 0.16);
+  --accent-line: rgba(0, 0, 128, 0.55);
+
+  /* semantic — dark, high-contrast on silver/white (no neon).
+   * AUDIT FIX: brief's --ok #008000 measures 3.34:1 on #d4d0c8 and only 2.83:1
+   * on its own --ok-bg pill — FAILS AA. Darkened to #006400 (4.84:1 on #d4d0c8,
+   * 7.31:1 on white) so success text/scores read. The --ok-bg / --ok-line fills
+   * keep the original 0,128,0 hue (fills carry no text-contrast requirement).
+   * --warn #7a5b00 measured 4.11:1 on #d4d0c8 / 4.03:1 on its warn-bg — short of
+   * AA; darkened to #664d00 (5.20:1 on #d4d0c8, 5.11:1 on warn-bg). */
+  --ok: #006400;
+  --ok-bg: rgba(0, 128, 0, 0.14);
+  --ok-line: rgba(0, 128, 0, 0.55);
+  --bad: #aa0000;
+  --bad-bg: rgba(170, 0, 0, 0.12);
+  --bad-line: rgba(170, 0, 0, 0.55);
+  --warn: #664d00;
+  --warn-bg: rgba(255, 196, 0, 0.20);
+  --warn-line: rgba(122, 91, 0, 0.55);
+  --info: #000080;
+
+  /* cram — the ONE hot color in the cool world */
+  --cram: #cc0000;
+  --cram-soft: #e04545;
+  --cram-glow: rgba(204, 0, 0, 0.16);
+  --cram-line: rgba(204, 0, 0, 0.55);
+
+  /* type — committed, not hedged. Web-safe Tahoma body (Matthew Carter, crisp,
+   * zero load), W95FA/Pixelify pixel face for chrome, Lucida Console for code. */
+  --mono: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+  --sans: 'Tahoma', 'Verdana', 'Segoe UI', system-ui, sans-serif;
+  --display: 'W95FA', 'Pixelify Sans', 'Tahoma', Verdana, sans-serif;
+
+  /* radii — everything is square. There are no rounded corners in 1996. */
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+
+  /* elevation — hard offset drop shadows, never blurred */
+  --shadow-1: 1px 1px 0 #404040;
+  --shadow-2: 2px 2px 0 #404040;
+  --shadow-pop: 4px 4px 0 rgba(0, 0, 0, 0.45);
+
+  /* motion — keep the chrome snappy; the press uses 0ms inline */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 90ms;
+  --med: 160ms;
+}
+
+/* ----------------------------------------------------------------------------
+ * Reusable bevel primitives, expressed as custom properties so every beveled
+ * control reads identically and the :active swap is a single var flip.
+ * OUTSET = raised plastic (light top-left, dark bottom-right).
+ * INSET  = recessed well  (dark top-left, light bottom-right).
+ * -------------------------------------------------------------------------- */
+:root[data-theme="win95"] {
+  --bevel-out:
+    inset  1px  1px 0 #ffffff,
+    inset -1px -1px 0 #808080,
+    inset  2px  2px 0 #dfdcd4,
+    inset -2px -2px 0 #404040;
+  --bevel-in:
+    inset  1px  1px 0 #404040,
+    inset -1px -1px 0 #ffffff,
+    inset  2px  2px 0 #808080,
+    inset -2px -2px 0 #dfdcd4;
+  /* engraved double-hairline (etched GroupBox frame) */
+  --bevel-etch:
+    inset  1px  1px 0 #808080,
+    inset -1px -1px 0 #ffffff;
+  /* sunken paper well (Notepad / progress track) */
+  --bevel-well:
+    inset  1px  1px 0 #808080,
+    inset -1px -1px 0 #ffffff,
+    inset  2px  2px 0 #404040;
+}
+
+/* ============================================================================
+ * 2. GLOBAL TYPE + BODY — silver desktop, crisp Tahoma, no anti-alias bloat.
+ * ========================================================================== */
+:root[data-theme="win95"] body {
+  background: #008080;
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================================
+ * 3. THE TEAL VOID + ACTIVE-DESKTOP WEAVE  (backdrop, fixed, non-interactive)
+ * Pure Desktop Teal #008080 with a faint 3px dotted #0a8c8c weave so any empty
+ * space unmistakably reads as the Windows desktop showing through the chrome.
+ * ========================================================================== */
+:root[data-theme="win95"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-color: #008080;
+  background-image: radial-gradient(#0a8c8c 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+/* The app window itself: one silver Win98 dialog floating ON the teal void,
+ * with an outset bevel edge and a hard 4px offset shadow (paper on a desk).
+ * shell::before is an allowed decorative overlay; the shell border/shadow is
+ * pure appearance (no geometry). */
+:root[data-theme="win95"] .shell {
+  background: var(--bg-1);
+  box-shadow: var(--bevel-out), 4px 4px 0 rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="win95"] .outlet { background: transparent; }
+:root[data-theme="win95"] .screen { background: var(--bg-1); }
+
+/* ============================================================================
+ * 4. HEADER — THE NAVY TITLE BAR.
+ * The ONLY gradient in the entire system: navy -> active-titlebar cyan.
+ * Pixel-font white title. Three 16px square beveled glyph buttons (_ [] X) on
+ * the right, drawn via ::after so they appear without markup changes.
+ * ========================================================================== */
+:root[data-theme="win95"] .header {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  border-bottom: 2px solid #404040;
+  color: #ffffff;
+}
+:root[data-theme="win95"] .header__title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: none;
+}
+:root[data-theme="win95"] .header__crumb { color: rgba(255, 255, 255, 0.78); }
+
+/* the three title-bar caption buttons: _  []  X  (decorative, drawn as one chip
+ * row). Glyphs are Marlett-ish ASCII so no extra font is required. */
+:root[data-theme="win95"] .header::after {
+  content: "_  \25A1  \2715";
+  margin-left: auto;
+  flex: none;
+  align-self: center;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.55em;
+  color: #000000;
+  background: var(--bg-2);
+  box-shadow: var(--bevel-out);
+  padding: 3px 12px 3px 14px;
+  line-height: 1;
+}
+
+/* ============================================================================
+ * 5. RAIL — THE START MENU / VERTICAL TASKBAR.
+ * Silver panel with an outset bevel edge. The brand becomes a navy Start block;
+ * the mark becomes a 4-quadrant pixel flag.
+ * ========================================================================== */
+:root[data-theme="win95"] .rail {
+  background: var(--bg-1);
+  border-right: 2px solid #404040;
+  box-shadow: inset -1px 0 0 #808080, inset 1px 0 0 #ffffff;
+}
+:root[data-theme="win95"] .rail__brand {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  border-bottom: 2px solid #404040;
+  box-shadow: var(--bevel-out);
+  padding: 12px 14px;
+}
+:root[data-theme="win95"] .rail__mark {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff;
+  text-shadow: none;
+}
+/* the 4-quadrant Windows pixel flag (navy block becomes the waving flag) */
+:root[data-theme="win95"] .rail__mark::before {
+  content: "";
+  width: 16px;
+  height: 14px;
+  border-radius: 0;
+  transform: skewX(-8deg);
+  background:
+    linear-gradient(135deg, #ff3b30 0 50%, #34c759 50% 100%) top left / 8px 7px no-repeat,
+    linear-gradient(135deg, #007aff 0 50%, #ffcc00 50% 100%) bottom right / 8px 7px no-repeat,
+    linear-gradient(135deg, #007aff 0 50%, #ffcc00 50% 100%) bottom left / 8px 7px no-repeat,
+    linear-gradient(135deg, #ff3b30 0 50%, #34c759 50% 100%) top right / 8px 7px no-repeat;
+  box-shadow: none;
+}
+:root[data-theme="win95"] .rail__sub {
+  color: rgba(255, 255, 255, 0.82);
+  font-family: var(--mono);
+}
+:root[data-theme="win95"] .rail__foot {
+  border-top: 1px solid #ffffff;
+  box-shadow: inset 0 1px 0 #808080;
+}
+
+/* group label — a tiny engraved divider header */
+:root[data-theme="win95"] .nav-group-label {
+  color: var(--ink-dim);
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+/* ============================================================================
+ * 6. NAVITEMS — raised taskbar buttons.
+ * Each gets the outset bevel; the active one shows the PRESSED (inverted) bevel
+ * + navy glow + a 2px navy left edge. The original rounded ::before pill is
+ * killed. Hover only brightens the face.
+ * ========================================================================== */
+:root[data-theme="win95"] .navitem {
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--ink);
+  background: var(--bg-2);
+  box-shadow: var(--bevel-out);
+  border-radius: 0;
+  margin: 3px 0;
+  padding: 7px 10px;
+  transition: none;
+}
+:root[data-theme="win95"] .navitem:hover { background: var(--bg-3); color: var(--ink); }
+:root[data-theme="win95"] .navitem.is-active {
+  background: var(--accent-glow);
+  color: #000000;
+  box-shadow: var(--bevel-in), inset 2px 0 0 #000080;
+}
+/* kill the legacy rounded accent bar */
+:root[data-theme="win95"] .navitem.is-active::before { display: none; content: none; }
+:root[data-theme="win95"] .navitem__glyph { color: var(--ink-dim); }
+:root[data-theme="win95"] .navitem.is-active .navitem__glyph { color: #000080; }
+:root[data-theme="win95"] .navitem__count {
+  background: var(--bg-1);
+  color: var(--ink-dim);
+  box-shadow: var(--bevel-etch);
+  border-radius: 0;
+  font-family: var(--mono);
+}
+
+/* urgent (Cram) navitem — the one hot red taskbar button */
+:root[data-theme="win95"] .navitem--urgent { color: var(--cram); }
+:root[data-theme="win95"] .navitem--urgent .navitem__glyph { color: var(--cram); }
+:root[data-theme="win95"] .navitem--urgent:hover { color: var(--cram); background: var(--cram-glow); }
+:root[data-theme="win95"] .navitem--urgent.is-active {
+  color: var(--cram);
+  background: var(--cram-glow);
+  box-shadow: var(--bevel-in), inset 2px 0 0 #cc0000;
+}
+
+/* ============================================================================
+ * 7. BUTTONS — THE 4-EDGE OUTSET BEVEL (the whole theme).
+ * Flat silver face, 0 radius, no border; the bevel is four box-shadow insets.
+ * Pixel-font label. :active inverts every inset AND translate(1px,1px) at 0ms.
+ * ========================================================================== */
+:root[data-theme="win95"] .btn {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: #000000;
+  background: var(--bg-2);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+  padding: 7px 16px;
+  transition: none;
+}
+:root[data-theme="win95"] .btn:hover {
+  background: var(--bg-3);
+  border-color: transparent;
+}
+/* THE PRESS — hard mechanical clunk, no easing */
+:root[data-theme="win95"] .btn:active {
+  box-shadow: var(--bevel-in);
+  transform: translate(1px, 1px);
+  transition: none;
+}
+:root[data-theme="win95"] .btn:disabled {
+  opacity: 1;          /* never use the banned grey-out; keep readable */
+  color: var(--ink-faint);
+  cursor: wait;        /* period-correct hourglass instead of a spinner */
+}
+
+/* primary = the Win95 "default action" button: same silver bevel + a 1px dotted
+ * black inner default ring drawn with outline. */
+:root[data-theme="win95"] .btn--primary {
+  background: var(--bg-2);
+  color: #000000;
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: var(--bevel-out);
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+:root[data-theme="win95"] .btn--primary:hover {
+  /* OVERRIDE hardcoded #62ecd2 from components.css */
+  background: var(--bg-3);
+  border-color: transparent;
+}
+:root[data-theme="win95"] .btn--primary:active {
+  box-shadow: var(--bevel-in);
+  transform: translate(1px, 1px);
+}
+
+:root[data-theme="win95"] .btn--ghost {
+  background: var(--bg-2);
+  border-color: transparent;
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="win95"] .btn--ghost:hover { background: var(--bg-3); }
+
+:root[data-theme="win95"] .btn--danger {
+  background: var(--bg-2);
+  color: #aa0000;
+  border-color: transparent;
+  box-shadow: var(--bevel-out);
+  font-weight: 700;
+}
+:root[data-theme="win95"] .btn--danger:hover { background: var(--bg-3); }
+
+:root[data-theme="win95"] .btn--sm { padding: 4px 10px; font-size: 11px; }
+:root[data-theme="win95"] .btn--lg { padding: 10px 22px; font-size: 13px; }
+:root[data-theme="win95"] .btn__kbd {
+  border: 0;
+  box-shadow: var(--bevel-out);
+  background: var(--bg-1);
+  border-radius: 0;
+  opacity: 1;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+}
+
+/* ============================================================================
+ * 8. PILLS / STATUS — tiny beveled cells, square corners, integer pixel text.
+ * ========================================================================== */
+:root[data-theme="win95"] .pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  background: var(--bg-2);
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+  padding: 2px 8px;
+}
+:root[data-theme="win95"] .pill--ok { color: #006400; background: var(--ok-bg); }
+:root[data-theme="win95"] .pill--bad { color: #aa0000; background: var(--bad-bg); }
+:root[data-theme="win95"] .pill--warn { color: #664d00; background: var(--warn-bg); }
+:root[data-theme="win95"] .pill--accent { color: #000080; background: var(--accent-glow); }
+:root[data-theme="win95"] .pill--solid {
+  background: #000080;
+  color: #ffffff;
+  box-shadow: var(--bevel-out);
+}
+
+/* status dots — square LED pips, no glow */
+:root[data-theme="win95"] .dot { border-radius: 0; background: var(--ink-faint); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4); }
+:root[data-theme="win95"] .dot--ok { background: #008000; }
+:root[data-theme="win95"] .dot--bad { background: #aa0000; }
+:root[data-theme="win95"] .dot--warn { background: #ffc400; }
+:root[data-theme="win95"] .dot--accent { background: #000080; }
+
+/* engine status readout — a sunken indented well */
+:root[data-theme="win95"] .engine {
+  font-family: var(--mono);
+  color: var(--ink-dim);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-etch);
+  background: var(--bg-1);
+}
+:root[data-theme="win95"] .engine.is-ready { color: #006400; }
+:root[data-theme="win95"] .engine.is-loading { color: #664d00; }
+:root[data-theme="win95"] .engine.is-error { color: #aa0000; }
+
+/* streak badge */
+:root[data-theme="win95"] .streak { font-family: var(--mono); color: var(--ink); }
+:root[data-theme="win95"] .streak__flame { color: #aa0000; }
+:root[data-theme="win95"] .streak__n { color: #000000; font-weight: 700; }
+
+/* ============================================================================
+ * 9. CARDS / PANELS — ENGRAVED Win95 GROUP BOX.
+ * No border; an etched inset-dark-over-inset-light double hairline. The title
+ * sits astride the top engraved line via a ::before chip in silver that breaks
+ * the line — a real GroupBox.
+ * ========================================================================== */
+:root[data-theme="win95"] .card {
+  background: var(--bg-1);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-etch);
+  transition: none;
+  position: relative;
+  padding: 18px;
+}
+:root[data-theme="win95"] a.card:hover,
+:root[data-theme="win95"] button.card:hover {
+  background: var(--bg-3);
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="win95"] .card--accent {
+  background: var(--bg-1);
+  box-shadow: var(--bevel-etch), inset 0 0 0 9999px var(--accent-glow);
+}
+:root[data-theme="win95"] .card__title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  color: #000000;
+}
+:root[data-theme="win95"] .card__meta { font-family: var(--mono); color: var(--ink-faint); }
+:root[data-theme="win95"] .card__body { color: var(--ink-dim); }
+
+/* card--cram — same engraved frame on the one hot red surface */
+:root[data-theme="win95"] .card--cram {
+  border: 0;
+  border-left: 0;
+  box-shadow: var(--bevel-etch), inset 0 0 0 9999px var(--cram-glow), inset 2px 0 0 #cc0000;
+}
+:root[data-theme="win95"] .card--cram:hover {
+  box-shadow: var(--bevel-out), inset 0 0 0 9999px var(--cram-glow), inset 2px 0 0 #cc0000;
+}
+
+/* section heads — engraved separator rule + pixel kicker */
+:root[data-theme="win95"] .section-head__kicker {
+  font-family: var(--display);
+  color: #000080;
+  letter-spacing: 0.12em;
+}
+:root[data-theme="win95"] .section-head__rule {
+  height: 2px;
+  background: linear-gradient(#808080 0 1px, #ffffff 1px 2px);
+}
+
+/* panel-head — a sunken titlebar strip */
+:root[data-theme="win95"] .panel-head {
+  background: var(--bg-1);
+  color: var(--ink-dim);
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 #808080, inset 0 -2px 0 #ffffff;
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+}
+
+/* empty state */
+:root[data-theme="win95"] .empty { color: var(--ink-faint); font-family: var(--mono); }
+
+/* ============================================================================
+ * 10. CALLOUTS / TOASTS — PALE-YELLOW BALLOON (the exact Win95 tooltip chrome).
+ * Pale yellow, 1px solid black, square, hard offset shadow, no blur.
+ * ========================================================================== */
+:root[data-theme="win95"] .callout {
+  background: #ffffe1;
+  border: 1px solid #000000;
+  border-radius: 0;
+  color: #000000;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+:root[data-theme="win95"] .callout__glyph { color: #000000; }
+:root[data-theme="win95"] .callout--warn { border-color: #000000; background: var(--warn-bg); }
+:root[data-theme="win95"] .callout--warn .callout__glyph { color: #664d00; }
+:root[data-theme="win95"] .callout--tip { border-color: #000000; background: #ffffe1; }
+:root[data-theme="win95"] .callout--tip .callout__glyph { color: #000080; }
+:root[data-theme="win95"] .callout--info { border-color: #000000; background: #ffffe1; }
+:root[data-theme="win95"] .callout--info .callout__glyph { color: #000080; }
+
+/* toast — a tooltip balloon that zooms in (see keyframes) */
+:root[data-theme="win95"] .toast {
+  background: #ffffe1;
+  border: 1px solid #000000;
+  border-radius: 0;
+  color: #000000;
+  font-family: var(--sans);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="win95"] .toast--ok { border-color: #000000; color: #008000; }
+:root[data-theme="win95"] .toast--bad { border-color: #000000; color: #aa0000; }
+
+/* ============================================================================
+ * 11. TABS — beveled folder tabs.
+ * ========================================================================== */
+:root[data-theme="win95"] .tabs {
+  background: var(--bg-1);
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 #808080;
+  gap: 2px;
+}
+:root[data-theme="win95"] .tab {
+  font-family: var(--display);
+  color: var(--ink-dim);
+  background: var(--bg-2);
+  box-shadow: var(--bevel-out);
+  border-bottom: 0;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+:root[data-theme="win95"] .tab:hover { color: #000000; background: var(--bg-3); }
+:root[data-theme="win95"] .tab.is-active {
+  color: #000000;
+  background: var(--bg-1);
+  border-bottom-color: transparent;
+  box-shadow: var(--bevel-out);
+  margin-top: 0;
+  z-index: 1;
+}
+:root[data-theme="win95"] .tab__badge {
+  background: var(--bg-1);
+  box-shadow: var(--bevel-etch);
+  border-radius: 0;
+  font-family: var(--mono);
+}
+
+/* ============================================================================
+ * 12. PROGRESS — SEGMENTED navy chunks in a sunken white well.
+ * ========================================================================== */
+:root[data-theme="win95"] .bar {
+  height: 16px;
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: var(--bevel-well);
+  padding: 2px;
+  overflow: hidden;
+}
+:root[data-theme="win95"] .bar__fill {
+  background:
+    repeating-linear-gradient(90deg, #000080 0 10px, transparent 10px 12px),
+    #ffffff;
+  border-radius: 0;
+  transition: width var(--med) steps(12);
+}
+:root[data-theme="win95"] .bar__fill--ok {
+  background:
+    repeating-linear-gradient(90deg, #008000 0 10px, transparent 10px 12px),
+    #ffffff;
+}
+
+/* level pips — small beveled cells */
+:root[data-theme="win95"] .pip {
+  background: var(--bg-1);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-in);
+}
+:root[data-theme="win95"] .pip.is-done { background: #000080; box-shadow: var(--bevel-out); }
+:root[data-theme="win95"] .pip.is-current { background: var(--accent-glow); box-shadow: var(--bevel-out); }
+:root[data-theme="win95"] .pip.is-partial { background: #ffc400; box-shadow: var(--bevel-out); }
+
+/* ============================================================================
+ * 13. HEADINGS / PROSE — pixel display face for headings, Tahoma for body.
+ * ========================================================================== */
+:root[data-theme="win95"] .h1 { font-family: var(--display); color: #000000; font-size: 20px; letter-spacing: 0; }
+:root[data-theme="win95"] .h2 { font-family: var(--display); color: #000000; }
+:root[data-theme="win95"] .lead { color: var(--ink-dim); }
+:root[data-theme="win95"] .muted { color: var(--ink-faint); }
+:root[data-theme="win95"] .mono { font-family: var(--mono); }
+
+/* markdown */
+:root[data-theme="win95"] .md { color: var(--ink); }
+:root[data-theme="win95"] .md__h { font-family: var(--display); color: #000000; }
+:root[data-theme="win95"] .md__h3 { color: var(--ink-dim); }
+:root[data-theme="win95"] .md__p { color: var(--ink); }
+:root[data-theme="win95"] .md__list li { color: var(--ink); }
+:root[data-theme="win95"] .md__list li::before { color: #000080; }
+:root[data-theme="win95"] ol.md__list li::before { color: #000080; }
+:root[data-theme="win95"] .md__code {
+  font-family: var(--mono);
+  background: var(--bg-2);
+  border: 0;
+  box-shadow: var(--bevel-etch);
+  border-radius: 0;
+  color: #000080;
+}
+:root[data-theme="win95"] .md__pre {
+  font-family: var(--mono);
+  background: #ffffff;
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-well);
+  color: #000000;
+}
+/* OVERRIDE hardcoded #cdd5e1 from components.css */
+:root[data-theme="win95"] .md__pre code { color: #000000; }
+:root[data-theme="win95"] .md__quote {
+  border-left: 2px solid #000080;
+  background: var(--accent-glow);
+  color: var(--ink);
+  border-radius: 0;
+}
+:root[data-theme="win95"] .md__hr {
+  height: 2px;
+  background: linear-gradient(#808080 0 1px, #ffffff 1px 2px);
+}
+
+/* ============================================================================
+ * 14. CODEMIRROR / IDE — SUNKEN WHITE NOTEPAD WELL.
+ * White paper, an inverted (recessed) bevel, Lucida Console. Many base rules use
+ * !important, so we re-apply !important where the base does (see the contract).
+ * The bright phosphor / neon is banned: every token is dark, >= 4.5:1 on white.
+ * ========================================================================== */
+:root[data-theme="win95"] .ide { background: var(--bg-1); }
+:root[data-theme="win95"] .ide__editorwrap,
+:root[data-theme="win95"] .ide__side,
+:root[data-theme="win95"] .ide__panel { background: var(--bg-1); }
+
+:root[data-theme="win95"] .CodeMirror {
+  font-family: var(--mono) !important;
+  background: #ffffff !important;
+  color: #000000 !important;            /* OVERRIDE #d6dce6 !important */
+  box-shadow: var(--bevel-well);
+}
+:root[data-theme="win95"] .CodeMirror-gutters {
+  background: var(--bg-2) !important;
+  border-right: 1px solid #808080 !important;
+  box-shadow: inset -1px 0 0 #ffffff;
+}
+:root[data-theme="win95"] .CodeMirror-linenumber { color: var(--ink-dim) !important; }
+:root[data-theme="win95"] .CodeMirror-cursor { border-left: 2px solid #000000 !important; }
+/* OVERRIDE rgba white !important */
+:root[data-theme="win95"] .CodeMirror-activeline-background { background: rgba(0, 0, 128, 0.06) !important; }
+/* OVERRIDE rgba teal !important — SYSTEM HIGHLIGHT navy-on-white */
+:root[data-theme="win95"] .CodeMirror-selected { background: #000080 !important; }
+:root[data-theme="win95"] .CodeMirror-focused .CodeMirror-selected { background: #000080 !important; }
+:root[data-theme="win95"] .CodeMirror-line::selection,
+:root[data-theme="win95"] .CodeMirror-line ::selection { background: #000080 !important; color: #ffffff !important; }
+:root[data-theme="win95"] .CodeMirror-matchingbracket {
+  color: #000080 !important;
+  font-weight: 700;
+  border-bottom: 1px solid #000080;
+  background: rgba(0, 0, 128, 0.12);
+}
+
+/* token colors — dark, high-contrast on white (NOT !important; specificity wins) */
+:root[data-theme="win95"] .cm-s-default .cm-keyword { color: #000080; font-weight: 700; }
+:root[data-theme="win95"] .cm-s-default .cm-def { color: #000080; }
+:root[data-theme="win95"] .cm-s-default .cm-variable { color: #000000; }
+:root[data-theme="win95"] .cm-s-default .cm-variable-2 { color: #5a3a00; }
+:root[data-theme="win95"] .cm-s-default .cm-property { color: #6a006a; }
+:root[data-theme="win95"] .cm-s-default .cm-string { color: #008000; }
+:root[data-theme="win95"] .cm-s-default .cm-number { color: #aa0000; }
+:root[data-theme="win95"] .cm-s-default .cm-comment { color: #6e6a62; font-style: italic; }
+:root[data-theme="win95"] .cm-s-default .cm-builtin { color: #000080; }
+:root[data-theme="win95"] .cm-s-default .cm-operator { color: #000000; }
+:root[data-theme="win95"] .cm-s-default .cm-meta { color: #6e6a62; }
+
+/* global selection — navy-on-white everywhere */
+:root[data-theme="win95"] ::selection { background: #000080; color: #ffffff; }
+
+/* terminal — same sunken white well */
+:root[data-theme="win95"] .terminal {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: var(--bevel-well);
+  font-family: var(--mono);
+}
+:root[data-theme="win95"] .terminal__empty { color: var(--ink-faint); }
+:root[data-theme="win95"] .terminal__err { color: #aa0000; }
+
+/* ============================================================================
+ * 15. TEST RESULTS — engraved rows; pass green, fail maroon.
+ * ========================================================================== */
+:root[data-theme="win95"] .testrow { border-bottom: 1px solid #808080; }
+:root[data-theme="win95"] .testrow:hover { background: var(--bg-3); }
+:root[data-theme="win95"] .testrow--pass .testrow__icon { color: #008000; }
+:root[data-theme="win95"] .testrow--fail .testrow__icon,
+:root[data-theme="win95"] .testrow--error .testrow__icon { color: #aa0000; }
+:root[data-theme="win95"] .testrow--skip .testrow__icon { color: var(--ink-faint); }
+:root[data-theme="win95"] .testrow__raw,
+:root[data-theme="win95"] .testrow__time { color: var(--ink-faint); font-family: var(--mono); }
+:root[data-theme="win95"] .testgroup__head {
+  background: var(--bg-2);
+  color: var(--ink);
+  box-shadow: var(--bevel-out);
+  font-family: var(--mono);
+}
+:root[data-theme="win95"] .trace {
+  background: #ffffff;
+  color: #aa0000;
+  border-left: 2px solid #aa0000;
+  box-shadow: var(--bevel-well);
+  border-radius: 0;
+}
+:root[data-theme="win95"] .trace__msg { color: var(--ink); }
+:root[data-theme="win95"] .runbar { background: var(--bg-1); box-shadow: inset 0 -1px 0 #808080, inset 0 -2px 0 #ffffff; }
+:root[data-theme="win95"] .runbar__score--ok { color: #006400; }
+:root[data-theme="win95"] .runbar__score--bad { color: #aa0000; }
+
+/* ============================================================================
+ * 16. SPINNER -> hourglass cursor world. We keep .spinner visible but recolor
+ * it; loading buttons already use cursor:wait above.
+ * ========================================================================== */
+:root[data-theme="win95"] .spinner {
+  border: 2px solid #808080;
+  border-top-color: #000080;
+}
+
+/* ============================================================================
+ * 17. FOCUS-VISIBLE — MARCHING ANTS.
+ * The unmistakable Win95 dotted keyboard-focus rectangle, inset 4px.
+ * ========================================================================== */
+:root[data-theme="win95"] .btn:focus-visible,
+:root[data-theme="win95"] .navitem:focus-visible,
+:root[data-theme="win95"] .tab:focus-visible,
+:root[data-theme="win95"] .pill:focus-visible,
+:root[data-theme="win95"] .theme-swatch:focus-visible,
+:root[data-theme="win95"] .quiz__opt:focus-visible,
+:root[data-theme="win95"] a:focus-visible {
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+
+/* ============================================================================
+ * 18. SCROLLBARS — authentic 16px grey Win95 chrome.
+ * Silver track with inset shadow, an outset-beveled silver thumb, 16px square
+ * beveled arrow buttons. Square, chunky, tactile.
+ * ========================================================================== */
+:root[data-theme="win95"] ::-webkit-scrollbar { width: 16px; height: 16px; }
+:root[data-theme="win95"] ::-webkit-scrollbar-track {
+  background: var(--bg-2);
+  box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #ffffff;
+}
+:root[data-theme="win95"] ::-webkit-scrollbar-thumb {
+  background: var(--bg-2);
+  box-shadow: var(--bevel-out);
+  border-radius: 0;
+}
+:root[data-theme="win95"] ::-webkit-scrollbar-thumb:active { box-shadow: var(--bevel-in); }
+:root[data-theme="win95"] ::-webkit-scrollbar-button {
+  background: var(--bg-2);
+  box-shadow: var(--bevel-out);
+  height: 16px;
+  width: 16px;
+  display: block;
+}
+:root[data-theme="win95"] ::-webkit-scrollbar-button:active { box-shadow: var(--bevel-in); }
+:root[data-theme="win95"] ::-webkit-scrollbar-corner { background: var(--bg-2); }
+
+/* ============================================================================
+ * 19. FORM CONTROLS — sunken wells.
+ * ========================================================================== */
+:root[data-theme="win95"] .lvlselect,
+:root[data-theme="win95"] .timer {
+  background: #ffffff;
+  color: #000000;
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-well);
+  font-family: var(--mono);
+}
+:root[data-theme="win95"] .timer.is-low { color: #7a5b00; }
+:root[data-theme="win95"] .timer.is-critical { color: #aa0000; }
+:root[data-theme="win95"] .scorebar { background: var(--bg-1); box-shadow: inset 0 -1px 0 #808080, inset 0 -2px 0 #ffffff; }
+:root[data-theme="win95"] .scorebar__score b { color: #000080; }
+
+/* LIGHT-theme fix: components.css hardcodes color-scheme:dark on this date input */
+:root[data-theme="win95"] .cram__exam-input {
+  color-scheme: light;
+  background: #ffffff;
+  color: #000000;
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-well);
+}
+:root[data-theme="win95"] .cram__exam-input:focus { outline: 1px dotted #000000; outline-offset: -4px; }
+
+/* ============================================================================
+ * 20. CRAM PATH — re-tokenized to the navy world with the single hot red CTA.
+ * Re-declare the four cram vars under scope (they are set on a bare :root in
+ * components.css, which our scoped block already overrides — but explicit here
+ * for clarity) and override the FIVE hardcoded warm-orange literals.
+ * ========================================================================== */
+
+/* OVERRIDE: .cram-hero gradient contained literal rgba(240,160,107,0.04) */
+:root[data-theme="win95"] .cram-hero {
+  background: var(--cram-glow);
+  border: 1px solid #000000;
+  border-left: 4px solid #cc0000;
+  border-radius: 0;
+  box-shadow: var(--shadow-2);
+  color: #000000;
+  transition: none;
+}
+/* OVERRIDE: .cram-hero:hover box-shadow rgba(240,160,107,0.18) */
+:root[data-theme="win95"] .cram-hero:hover {
+  transform: none;
+  box-shadow: var(--shadow-pop);
+  border-color: #000000;
+  background: rgba(204, 0, 0, 0.22);
+}
+/* OVERRIDE: .cram-hero__flag background rgba(240,160,107,0.12) */
+:root[data-theme="win95"] .cram-hero__flag {
+  font-family: var(--mono);
+  color: #ffffff;
+  background: #cc0000;
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+}
+:root[data-theme="win95"] .cram-hero__title { color: #000000; }
+:root[data-theme="win95"] .cram-hero__sub { color: var(--ink-dim); }
+/* AUDIT FIX: cram TEXT on light/glow surfaces. Brief claimed #cc0000 ~4.7:1 on
+ * silver; measured 3.24:1 on #c0c0c0 / 3.83:1 on #d4d0c8 — FAILS AA. Darkened
+ * red-text to #990000 (4.45:1 on cram-glow-over-bg1, 4.90:1 on #c0c0c0, both AA).
+ * The --cram #cc0000 token is unchanged and still drives fills/borders/LEDs,
+ * where contrast-of-text does not apply. */
+:root[data-theme="win95"] .cram-hero__sub b { color: #990000; }
+:root[data-theme="win95"] .cram-hero__cta { color: #990000; border-left: 1px solid #cc0000; }
+
+/* OVERRIDE: .cram-pointer:hover background rgba(240,160,107,0.20) */
+:root[data-theme="win95"] .cram-pointer {
+  background: var(--cram-glow);
+  border: 1px solid #000000;
+  border-left: 3px solid #cc0000;
+  border-radius: 0;
+  color: #000000;
+  transition: none;
+}
+:root[data-theme="win95"] .cram-pointer:hover { background: rgba(204, 0, 0, 0.22); }
+:root[data-theme="win95"] .cram-pointer__flag { color: #990000; font-family: var(--mono); }
+:root[data-theme="win95"] .cram-pointer__text { color: var(--ink-dim); }
+:root[data-theme="win95"] .cram-pointer__text b { color: #990000; }
+:root[data-theme="win95"] .cram-pointer__cta { color: #990000; font-family: var(--mono); }
+
+/* OVERRIDE: .cram__step-go:hover background rgba(240,160,107,0.20) */
+:root[data-theme="win95"] .cram__step-go {
+  color: #990000;
+  background: var(--cram-glow);
+  border: 1px solid #cc0000;
+  border-radius: 0;
+  font-family: var(--mono);
+  transition: none;
+}
+:root[data-theme="win95"] .cram__step-go:hover { background: rgba(204, 0, 0, 0.22); }
+
+/* the rest of the cram screen — square it up, swap teal/orange for navy/red */
+:root[data-theme="win95"] .cram__step {
+  background: var(--bg-1);
+  border: 0;
+  border-left: 2px solid #808080;
+  border-radius: 0;
+  box-shadow: var(--bevel-etch);
+  transition: none;
+}
+:root[data-theme="win95"] .cram__step:hover { background: var(--bg-3); }
+:root[data-theme="win95"] .cram__step--lesson.is-required { border-left-color: #000080; }
+:root[data-theme="win95"] .cram__step--drill.is-required { border-left-color: #1084d0; }
+:root[data-theme="win95"] .cram__step--mock.is-required { border-left-color: #cc0000; }
+:root[data-theme="win95"] .cram__step--break { border-left-color: #808080; background: var(--bg-2); }
+:root[data-theme="win95"] .cram__step.is-done { background: #ffffff; opacity: 0.55; }
+:root[data-theme="win95"] .cram__step-label { color: #000000; }
+:root[data-theme="win95"] .cram__step-label:hover { color: #990000; }
+:root[data-theme="win95"] .cram__step-cb {
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: var(--bevel-well);
+}
+:root[data-theme="win95"] .cram__step-cb:checked { background: #000080; box-shadow: var(--bevel-out); }
+:root[data-theme="win95"] .cram__step-cb:checked::after { color: #ffffff; }
+:root[data-theme="win95"] .cram__step-why-glyph { color: #cc0000; }
+:root[data-theme="win95"] .cram__head { border-bottom: 2px solid #cc0000; }
+:root[data-theme="win95"] .cram__head-flag,
+:root[data-theme="win95"] .cram__chip--required,
+:root[data-theme="win95"] .cram__head-title { color: inherit; }
+:root[data-theme="win95"] .cram__head-flag {
+  color: #ffffff; background: #cc0000; border: 0; box-shadow: var(--bevel-out);
+  font-family: var(--mono); border-radius: 0;
+}
+:root[data-theme="win95"] .cram__head-title { color: #000000; font-family: var(--display); }
+:root[data-theme="win95"] .cram__head-sub { color: #990000; }
+:root[data-theme="win95"] .cram__remain-big { color: #990000; font-family: var(--mono); }
+:root[data-theme="win95"] .cram__progress-bar {
+  height: 16px; background: #ffffff; box-shadow: var(--bevel-well); border-radius: 0; padding: 2px;
+}
+:root[data-theme="win95"] .cram__progress-fill {
+  background: repeating-linear-gradient(90deg, #cc0000 0 10px, transparent 10px 12px), #ffffff;
+}
+:root[data-theme="win95"] .cram__block-kicker { color: #990000; font-family: var(--display); }
+:root[data-theme="win95"] .cram__block-title { color: #000000; font-family: var(--display); }
+:root[data-theme="win95"] .cram__kind--lesson { color: #000080; }
+:root[data-theme="win95"] .cram__kind--drill { color: #1084d0; }
+:root[data-theme="win95"] .cram__kind--mock { color: #990000; }
+:root[data-theme="win95"] .cram__chip--required { color: #990000; background: var(--cram-glow); border-radius: 0; }
+:root[data-theme="win95"] .cram-flag { color: #990000; background: var(--cram-glow); border: 1px solid #cc0000; border-radius: 0; }
+
+/* ============================================================================
+ * 21. SETTINGS POPOVER + THEME SWATCHES — it's a floating dialog.
+ * Built from .card/.btn/.tab/.pill so it mostly inherits; here we make the
+ * popover read as a Win98 dialog and fix the swatches/switch.
+ * ========================================================================== */
+:root[data-theme="win95"] .settings-pop {
+  background: var(--bg-1);
+  box-shadow: var(--bevel-out), 4px 4px 0 rgba(0, 0, 0, 0.45);
+  border-radius: 0;
+}
+:root[data-theme="win95"] .settings-pop__label { color: var(--ink-dim); font-family: var(--display); }
+:root[data-theme="win95"] .settings-pop__sep {
+  height: 2px; background: linear-gradient(#808080 0 1px, #ffffff 1px 2px);
+}
+:root[data-theme="win95"] .settings-trigger__swatch {
+  background: #000080; border: 0; box-shadow: var(--bevel-out); border-radius: 0;
+}
+:root[data-theme="win95"] .theme-swatch {
+  background: var(--bg-2);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+  color: #000000;
+  transition: none;
+}
+:root[data-theme="win95"] .theme-swatch:hover { transform: none; background: var(--bg-3); }
+:root[data-theme="win95"] .theme-swatch.is-selected {
+  box-shadow: var(--bevel-in);
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+:root[data-theme="win95"] .theme-swatch__chip { border: 1px solid #404040; border-radius: 0; }
+:root[data-theme="win95"] .theme-swatch__name { color: var(--ink-dim); font-family: var(--mono); }
+:root[data-theme="win95"] .theme-swatch.is-selected .theme-swatch__name { color: #000000; }
+
+/* reduce-motion switch — recolor to navy on */
+:root[data-theme="win95"] .settings-switch__btn {
+  background: #ffffff; border: 0; border-radius: 0; box-shadow: var(--bevel-well);
+}
+:root[data-theme="win95"] .settings-switch__btn.is-on { background: #000080; }
+:root[data-theme="win95"] .settings-switch__knob {
+  background: var(--bg-2); border-radius: 0; box-shadow: var(--bevel-out);
+}
+:root[data-theme="win95"] .settings-switch__btn.is-on .settings-switch__knob { background: var(--bg-2); }
+
+/* ============================================================================
+ * 22. PATH PANEL / MASTERY — recolor to navy, square the chrome.
+ * ========================================================================== */
+:root[data-theme="win95"] .pathpanel {
+  background: var(--bg-1);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-etch);
+}
+:root[data-theme="win95"] .pathpanel__kicker { color: #000080; font-family: var(--display); }
+:root[data-theme="win95"] .pathpanel__title { color: #000000; font-family: var(--display); }
+:root[data-theme="win95"] .pathgroup__num {
+  background: var(--bg-2); color: #000080; border-radius: 0; box-shadow: var(--bevel-out);
+  font-family: var(--mono);
+}
+:root[data-theme="win95"] .pathstep:hover { background: var(--bg-3); color: #000000; }
+:root[data-theme="win95"] .pathstep.is-done .pathstep__mark { color: #006400; }
+:root[data-theme="win95"] .pathstep.is-next {
+  background: var(--accent-glow); color: #000000; outline: 1px dotted #000000; outline-offset: -3px;
+}
+:root[data-theme="win95"] .pathstep.is-next .pathstep__mark { color: #000080; }
+
+/* ============================================================================
+ * 23. AMBIENT MOTION — gated behind prefers-reduced-motion: no-preference.
+ * The only ambient motion in this theme is the marching-ants focus ring; the
+ * mechanical button press is intentionally instant (0ms) and is NOT gated.
+ * ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* stepped marching ants on the keyboard-focus ring */
+  @keyframes win95-ants { to { outline-offset: -3px; } }
+  :root[data-theme="win95"] .btn:focus-visible,
+  :root[data-theme="win95"] .navitem:focus-visible {
+    animation: win95-ants 0.4s steps(2, jump-none) infinite alternate;
+  }
+  /* toast / modal reveal — ZOOM RECTANGLE pop, 90ms, no fade */
+  @keyframes win95-zoomrect {
+    from { transform: translateX(-50%) scale(0.86); }
+    to   { transform: translateX(-50%) scale(1); }
+  }
+  :root[data-theme="win95"] .toast {
+    animation: win95-zoomrect 90ms steps(3, jump-end) both;
+  }
+  /* urgent cram glyph — a discrete two-frame blink, not a smooth pulse */
+  @keyframes win95-cramblink { 0%, 60% { opacity: 1; } 61%, 100% { opacity: 0.4; } }
+  :root[data-theme="win95"] .navitem--urgent .navitem__glyph {
+    animation: win95-cramblink 1.2s steps(1) infinite;
+  }
+}

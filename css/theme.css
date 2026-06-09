@@ -41,6 +41,9 @@
   /* type */
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  /* --display: chrome/heading face. Themes override it; the base (dark) theme
+     aliases it to the body sans so any reference resolves. */
+  --display: var(--sans);
 
   /* radii — sharp, IDE-like */
   --r-sm: 4px;

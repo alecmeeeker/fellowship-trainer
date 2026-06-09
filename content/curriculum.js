@@ -11,9 +11,11 @@ export default {
       title: "Foundations → Mastery",
       blurb: "Every building block for the five skills the assessment names — writing functions, lists, dictionaries, the unittest library, and concurrency — from the absolute basics up to expert. Work it top to bottom.",
       groups: [
-        { title: "Functions", lessons: ["m1-basics", "m1-return", "m1-signatures", "m1-args", "m1-scope", "m1-higher-order", "m1-generators"] },
+        { title: "Functions", lessons: ["m1-basics", "m1-return", "m1-ternary", "m1-signatures", "m1-args", "m1-errors", "m1-scope", "m1-higher-order", "m1-generators"] },
+        { title: "Strings", lessons: ["m4-case", "m4-fstrings"] },
         { title: "Lists", lessons: ["m2-basics", "m2-ops", "m2-methods", "m2-iteration", "m2-mutability", "m2-comprehensions", "m2-tuples-nested"] },
         { title: "Dictionaries", lessons: ["m3-basics", "m3-dict", "m3-mutation", "m3-patterns", "m3-sets"] },
+        { title: "String parsing", lessons: ["m4-split"] },
         { title: "collections & sorting", lessons: ["m5-defaultdict", "m5-deque", "m6-key", "m6-tuple-keys"] },
         { title: "unittest", lessons: ["m7-anatomy", "m7-assertions", "m7-fixtures", "m7-spec", "m7-running"] },
         { title: "Concurrency", lessons: ["m10-model", "m10-async-basics", "m10-async-concurrency", "m10-async-coordination", "m10-async-errors", "m10-threading", "m10-threading-atomicity", "m10-threading-tools", "m10-threading-pools"] },
@@ -247,6 +249,8 @@ def nothing():
 
 print(shout("hello"))
 print(nothing())      # None` },
+            { type: "note", kind: "info", value:
+`The \`.upper()\` you saw above is a **string method**: \`text.upper()\` returns an UPPERCASE copy of a string, and \`text.lower()\` a lowercase copy — the original string is never changed (strings are immutable). You will drill the full string toolkit in the **Strings** unit that follows; for now, reach for \`.upper()\` and \`.lower()\` whenever an exercise needs them.` },
             { type: "quiz", q: "\`def f(x, y): return x - y\` — what does \`f(10, 3)\` return?",
               options: ["13", "7", "-7"],
               answer: 1,
@@ -599,6 +603,215 @@ class ExerciseTests(unittest.TestCase):
 def sum_of_squares(a, b):
     return square(a) + square(b)
 ` },
+          ],
+        },
+        {
+          id: "m1-ternary",
+          title: "Ternary expressions",
+          minutes: 5,
+          blocks: [
+
+            { type: "text", value:
+        `A four-line \`if/else\` just to pick one of two **values** is noise. Python's **conditional expression** — also called the **ternary** — chooses between two values on a single line and *evaluates to* that value, so you can drop it straight into a \`return\`.
+
+The shape is **\`<value-if-true> if <condition> else <value-if-false>\`**. Read it left to right: hand back the first value when the condition is true, otherwise the value after \`else\`. The \`else\` is mandatory — a ternary always produces a value.` },
+
+            { type: "code", run: true, value:
+        `def describe(n):
+    return "even" if n % 2 == 0 else "odd"   # picks one of two values
+
+print(describe(4))    # even
+print(describe(7))    # odd` },
+
+            { type: "text", value:
+        `Because a ternary *is* a value, it fits anywhere a value fits: the right side of an **assignment**, or nested **inside a bigger expression**. The same logic written as a full \`if/else\` block would take four lines and a throwaway variable.` },
+
+            { type: "code", run: true, value:
+        `def fare(age):
+    price = 0 if age < 5 else 10          # assign one of two values
+    return price
+
+# usable inside a bigger expression, too:
+def older_label(a, b):
+    return "tie" if a == b else str(max(a, b))
+
+print(fare(3))             # 0
+print(fare(30))            # 10
+print(older_label(2, 9))   # 9
+print(older_label(4, 4))   # tie` },
+
+            { type: "note", kind: "warn", value:
+        `Stop at **one** condition. Nesting a ternary inside another ternary (\`a if p else (b if q else c)\`) is legal but reads like a puzzle under interview pressure. When you need two conditions, reach for \`if/elif/else\` instead — clarity beats one-liner cleverness.` },
+
+            { type: "quiz",
+              q: "What does `\"hot\" if temp > 30 else \"mild\"` evaluate to when `temp` is `30`?",
+              options: ['"hot"', '"mild"', "It raises an error because there is no elif"],
+              answer: 1,
+              explain: "The condition is temp > 30. With temp == 30 that is False, so the expression takes the else branch and evaluates to \"mild\". A ternary needs no elif; it always yields one of exactly two values." },
+
+            { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Press **Check** to run the hidden tests." },
+
+            { type: "text", value: "### Recall — rebuild it from memory" },
+
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall the **ternary** `<value-if-true> if <condition> else <value-if-false>` used in a `return`. Write `sign_word(n)` that **returns** `\"positive\"` when `n` is greater than `0`, otherwise `\"non-positive\"`. `sign_word(7)` returns `\"positive\"`; `sign_word(0)` returns `\"non-positive\"`.",
+              tests:
+        `import unittest
+from solution import sign_word
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_positive(self):
+        self.assertEqual(sign_word(7), "positive")
+
+    def test_zero(self):
+        self.assertEqual(sign_word(0), "non-positive")
+
+    def test_negative(self):
+        self.assertEqual(sign_word(-3), "non-positive")
+
+    def test_one(self):
+        self.assertEqual(sign_word(1), "positive")
+`,
+              solution:
+        `def sign_word(n):
+    return "positive" if n > 0 else "non-positive"
+` },
+
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall a **ternary on the right side of an assignment**. Write `bigger(a, b)` that assigns the larger of the two arguments to a variable using a ternary, then **returns** that variable. `bigger(9, 2)` returns `9`; `bigger(2, 9)` returns `9`; on a tie `bigger(5, 5)` returns `5`.",
+              tests:
+        `import unittest
+from solution import bigger
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_first_bigger(self):
+        self.assertEqual(bigger(9, 2), 9)
+
+    def test_second_bigger(self):
+        self.assertEqual(bigger(2, 9), 9)
+
+    def test_equal(self):
+        self.assertEqual(bigger(5, 5), 5)
+
+    def test_negatives(self):
+        self.assertEqual(bigger(-8, -1), -1)
+`,
+              solution:
+        `def bigger(a, b):
+    result = a if a >= b else b
+    return result
+` },
+
+            { type: "text", value: "### Apply it" },
+
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `shipping_fee(amount)` that **returns** the shipping cost as a single **ternary**: `0` when `amount` is greater than `100`, otherwise `5`. `shipping_fee(150)` returns `0`; `shipping_fee(100)` returns `5`; `shipping_fee(0)` returns `5`.",
+              tests:
+        `import unittest
+from solution import shipping_fee
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_over_threshold(self):
+        self.assertEqual(shipping_fee(150), 0)
+
+    def test_at_threshold(self):
+        self.assertEqual(shipping_fee(100), 5)
+
+    def test_under_threshold(self):
+        self.assertEqual(shipping_fee(20), 5)
+
+    def test_zero(self):
+        self.assertEqual(shipping_fee(0), 5)
+`,
+              solution:
+        `def shipping_fee(amount):
+    return 0 if amount > 100 else 5
+` },
+
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `floor_at_zero(n)` that **returns** `n` itself when `n` is `0` or greater, otherwise `0` — clamping negatives up to zero with one **ternary**. `floor_at_zero(12)` returns `12`; `floor_at_zero(0)` returns `0`; `floor_at_zero(-4)` returns `0`.",
+              tests:
+        `import unittest
+from solution import floor_at_zero
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_positive(self):
+        self.assertEqual(floor_at_zero(12), 12)
+
+    def test_zero(self):
+        self.assertEqual(floor_at_zero(0), 0)
+
+    def test_negative(self):
+        self.assertEqual(floor_at_zero(-4), 0)
+
+    def test_large_negative(self):
+        self.assertEqual(floor_at_zero(-999), 0)
+`,
+              solution:
+        `def floor_at_zero(n):
+    return n if n >= 0 else 0
+` },
+
+            { type: "text", value: "### Combine it" },
+
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine a **ternary** with **returning a tuple** (from the previous lesson). Write `sign_report(n)` that **returns a 2-tuple** `(word, magnitude)`: `word` is `\"negative\"` when `n` is below `0` else `\"non-negative\"`, and `magnitude` is `abs(n)`. `sign_report(-7)` returns `(\"negative\", 7)`; `sign_report(4)` returns `(\"non-negative\", 4)`; `sign_report(0)` returns `(\"non-negative\", 0)`.",
+              tests:
+        `import unittest
+from solution import sign_report
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_negative(self):
+        self.assertEqual(sign_report(-7), ("negative", 7))
+
+    def test_positive(self):
+        self.assertEqual(sign_report(4), ("non-negative", 4))
+
+    def test_zero(self):
+        self.assertEqual(sign_report(0), ("non-negative", 0))
+
+    def test_returns_tuple(self):
+        self.assertIsInstance(sign_report(3), tuple)
+`,
+              solution:
+        `def sign_report(n):
+    word = "negative" if n < 0 else "non-negative"
+    return word, abs(n)
+` },
+
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine a **ternary** with a **default parameter**. Write `access_level(age, is_member=False)` that **returns** `\"full\"` when the visitor `is_member` OR `age` is at least `18`, otherwise `\"limited\"` — decide it with one ternary whose condition uses `or`. `access_level(30)` returns `\"full\"`; `access_level(15)` returns `\"limited\"`; `access_level(15, True)` returns `\"full\"`.",
+              tests:
+        `import unittest
+from solution import access_level
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_adult_default(self):
+        self.assertEqual(access_level(30), "full")
+
+    def test_minor_default(self):
+        self.assertEqual(access_level(15), "limited")
+
+    def test_minor_member(self):
+        self.assertEqual(access_level(15, True), "full")
+
+    def test_exact_eighteen(self):
+        self.assertEqual(access_level(18), "full")
+
+    def test_adult_member(self):
+        self.assertEqual(access_level(40, is_member=True), "full")
+`,
+              solution:
+        `def access_level(age, is_member=False):
+    return "full" if is_member or age >= 18 else "limited"
+` },
+
           ],
         },
         {
@@ -1061,6 +1274,286 @@ class ExerciseTests(unittest.TestCase):
           ],
         },
         {
+          id: "m1-errors",
+          title: "Reading the errors a test expects",
+          minutes: 8,
+          blocks: [
+            { type: "text", value:
+        `When an operation cannot proceed, Python **raises an exception** — it stops the current line and reports an **error class** with a message. You have already seen these names inside test code: \`with self.assertRaises(TypeError):\`. This lesson is about *reading* them — what each name means, and what a test is checking when it names one. You are **not** writing \`try\`, \`except\`, or \`raise\` here; you are learning to recognise the errors your code will trip on its own.
+
+The five you will keep meeting:
+
+- **\`IndexError\`** — a list or string index that is **past the end**.
+- **\`ValueError\`** — a value of the right *type* but the wrong *content*, e.g. \`int("abc")\`.
+- **\`ZeroDivisionError\`** — dividing by zero.
+- **\`TypeError\`** — an operation between **incompatible types** (\`"a" + 1\`), or a function **called wrong** (too few arguments, or a keyword-only one passed positionally).
+- **\`KeyError\`** — a **missing dict key** read with \`[]\`. (Dicts come later; just learn the name now.)` },
+            { type: "text", value:
+        `### IndexError — index past the end
+
+A list of 3 items has only the indices \`0\`, \`1\`, \`2\` (and the negatives \`-1\`, \`-2\`, \`-3\`). Ask for any other and you get \`IndexError: list index out of range\`. The same holds for indexing a string. Run this — the valid lines print, and the last line shows the traceback:` },
+            { type: "code", run: true, value:
+        `letters = ["a", "b", "c"]    # valid indices: 0, 1, 2  (and -1, -2, -3)
+print(letters[0])            # a
+print(letters[-1])           # c   (last item)
+print(letters[5])            # no index 5  ->  IndexError: list index out of range` },
+            { type: "text", value:
+        `### ValueError — right type, wrong content
+
+\`int(...)\` happily turns a clean numeric string into a number. Hand it a string that is *not* a whole number and the type is fine (it is a \`str\`) but the **content** is not convertible — that is a \`ValueError\`, not a \`TypeError\`. Same idea for \`float("x")\`.` },
+            { type: "code", run: true, value:
+        `print(int("42"))     # 42   (a clean numeric string converts)
+print(int("-7"))     # -7
+print(int("3.5"))    # "3.5" is not a whole number  ->  ValueError` },
+            { type: "text", value:
+        `### ZeroDivisionError — dividing by zero
+
+\`/\`, \`//\`, and \`%\` all refuse a zero on the right. The error class is the same for each; only the message wording differs (\`division by zero\` for \`/\`, \`integer modulo by zero\` for \`%\`).` },
+            { type: "code", run: true, value:
+        `print(10 / 2)    # 5.0
+print(7 // 2)    # 3    (floor division)
+print(1 / 0)     # zero on the right  ->  ZeroDivisionError: division by zero` },
+            { type: "text", value:
+        `### TypeError — incompatible types, or a bad call
+
+Two unrelated causes share this one name. **(1)** An operation between types Python will not mix — adding a \`str\` and an \`int\` (\`"a" + 1\`). **(2)** Calling a function the wrong way — too few arguments, or a **keyword-only** parameter passed positionally (the exact thing the bare \`*\` from \`m1-args\` guards against). Both raise \`TypeError\`.` },
+            { type: "code", run: true, value:
+        `print("count: " + 1)    # str + int  ->  TypeError: can only concatenate str (not "int") to str
+
+def add(a, b):
+    return a + b
+
+print(add(2, 3))        # 5
+print(add(2))           # missing b  ->  TypeError: add() missing 1 required positional argument: 'b'` },
+            { type: "note", kind: "tip", value:
+        `How a test reads an error. A test line like \`with self.assertRaises(IndexError): at([1, 2], 5)\` means *"I EXPECT the code in this block to raise \`IndexError\` on this input."* The test **passes** only if the block actually raised **that exact class**. If your function instead returns a value, or raises a *different* class, the assertion **fails**. So when you see an \`assertRaises\` block, read it as a behaviour the spec is demanding — not as an accident.` },
+            { type: "quiz", q: "A hidden test contains `with self.assertRaises(ValueError): to_int(\"abc\")`. Your `to_int(s)` is just `return int(s)`. What happens when the test runs?",
+              options: [
+                "The test fails, because `int(\"abc\")` raises `TypeError`, not `ValueError`",
+                "The test passes, because `int(\"abc\")` raises `ValueError` and that is exactly what the block expects",
+                "The test fails, because a function must use `raise` for `assertRaises` to pass"
+              ],
+              answer: 1,
+              explain: "`int(\"abc\")` raises `ValueError` (right type — a str — but wrong content). `assertRaises(ValueError)` passes precisely when the block raises that class, which it does. You did not need to write `raise`: the built-in operation raises on its own, and the test confirms it. (`int` of a non-numeric string is a `ValueError`, not a `TypeError`.)" },
+            { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Each task asks for an ordinary function. The hidden tests check the normal cases with `assertEqual` AND feed one bad input wrapped in `with self.assertRaises(...)` to confirm the natural error fires. You never write `try`, `except`, or `raise` — just let the operation raise on its own. Press **Check** to run the hidden tests." },
+            { type: "text", value: "### Recall — rebuild it from memory" },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`IndexError`** — indexing past the end of a list. Write `third(xs)` that returns the item at index `2` of the list `xs` (i.e. `xs[2]`). `third([10, 20, 30])` returns `30`; `third([\"a\", \"b\", \"c\"])` returns `\"c\"`. A list shorter than 3 items, like `third([1, 2])`, has no index `2`, so it raises `IndexError` on its own — the test expects that.",
+              tests:
+        `import unittest
+from solution import third
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(third([10, 20, 30]), 30)
+
+    def test_longer(self):
+        self.assertEqual(third([1, 2, 3, 4, 5]), 3)
+
+    def test_strings(self):
+        self.assertEqual(third(["a", "b", "c"]), "c")
+
+    def test_too_short_raises_indexerror(self):
+        with self.assertRaises(IndexError):
+            third([1, 2])
+`,
+              solution:
+        `def third(xs):
+    return xs[2]
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`ValueError`** — `int(...)` on a string whose content is not a whole number. Write `to_int(s)` that returns `int(s)`. `to_int(\"42\")` returns `42`; `to_int(\"-7\")` returns `-7`. A non-numeric string like `to_int(\"nope\")` raises `ValueError` on its own — the test expects that.",
+              tests:
+        `import unittest
+from solution import to_int
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(to_int("42"), 42)
+
+    def test_zero(self):
+        self.assertEqual(to_int("0"), 0)
+
+    def test_negative(self):
+        self.assertEqual(to_int("-7"), -7)
+
+    def test_non_numeric_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            to_int("nope")
+`,
+              solution:
+        `def to_int(s):
+    return int(s)
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`ZeroDivisionError`** — dividing by zero. Write `ratio(a, b)` that returns `a / b`. `ratio(10, 2)` returns `5.0`; `ratio(3, 4)` returns `0.75`. A zero denominator like `ratio(5, 0)` raises `ZeroDivisionError` on its own — the test expects that.",
+              tests:
+        `import unittest
+from solution import ratio
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(ratio(10, 2), 5.0)
+
+    def test_fraction(self):
+        self.assertEqual(ratio(3, 4), 0.75)
+
+    def test_zero_numerator(self):
+        self.assertEqual(ratio(0, 5), 0.0)
+
+    def test_zero_denominator_raises(self):
+        with self.assertRaises(ZeroDivisionError):
+            ratio(5, 0)
+`,
+              solution:
+        `def ratio(a, b):
+    return a / b
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`TypeError`** — an operation between incompatible types. Write `add(a, b)` that returns `a + b`. It works whenever the two arguments can be added: `add(2, 3)` returns `5`; `add(\"a\", \"b\")` returns `\"ab\"`. Mixing a string and an int, like `add(\"a\", 1)`, raises `TypeError` on its own — the test expects that.",
+              tests:
+        `import unittest
+from solution import add
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_ints(self):
+        self.assertEqual(add(2, 3), 5)
+
+    def test_strings(self):
+        self.assertEqual(add("a", "b"), "ab")
+
+    def test_negative(self):
+        self.assertEqual(add(-4, 1), -3)
+
+    def test_mixed_types_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            add("a", 1)
+`,
+              solution:
+        `def add(a, b):
+    return a + b
+` },
+            { type: "text", value: "### Apply it" },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `at(xs, i)` that returns the item of list `xs` at index `i` (i.e. `xs[i]`). `at([10, 20, 30], 0)` returns `10`; `at([10, 20, 30], -1)` returns `30`. An index past the end, like `at([1, 2], 5)`, raises `IndexError`; indexing the empty list, `at([], 0)`, raises `IndexError` too. The hidden test checks the normal indices with `assertEqual` and the out-of-range ones with `assertRaises(IndexError)`.",
+              tests:
+        `import unittest
+from solution import at
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_first(self):
+        self.assertEqual(at([10, 20, 30], 0), 10)
+
+    def test_middle(self):
+        self.assertEqual(at([10, 20, 30], 1), 20)
+
+    def test_negative_index(self):
+        self.assertEqual(at([10, 20, 30], -1), 30)
+
+    def test_past_end_raises_indexerror(self):
+        with self.assertRaises(IndexError):
+            at([1, 2], 5)
+
+    def test_empty_raises_indexerror(self):
+        with self.assertRaises(IndexError):
+            at([], 0)
+`,
+              solution:
+        `def at(xs, i):
+    return xs[i]
+` },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `parse_sum(a, b)` that takes two strings, converts each with `int`, and returns their sum (i.e. `int(a) + int(b)`). `parse_sum(\"3\", \"4\")` returns `7`; `parse_sum(\"-2\", \"10\")` returns `8`. If either string is not a whole number — `parse_sum(\"3\", \"x\")` or `parse_sum(\"nope\", \"4\")` — the `int(...)` call raises `ValueError`. The hidden test checks the valid pairs with `assertEqual` and the bad ones with `assertRaises(ValueError)`.",
+              tests:
+        `import unittest
+from solution import parse_sum
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(parse_sum("3", "4"), 7)
+
+    def test_negative(self):
+        self.assertEqual(parse_sum("-2", "10"), 8)
+
+    def test_zeros(self):
+        self.assertEqual(parse_sum("0", "0"), 0)
+
+    def test_bad_second_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            parse_sum("3", "x")
+
+    def test_bad_first_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            parse_sum("nope", "4")
+`,
+              solution:
+        `def parse_sum(a, b):
+    return int(a) + int(b)
+` },
+            { type: "text", value: "### Combine it" },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine **`*args`** (from `m1-args`) with **`ZeroDivisionError`**. Write `mean(*nums)` that accepts any number of positional numbers and returns their arithmetic mean as `sum(nums) / len(nums)`. `mean(2, 4, 6)` returns `4.0`; `mean(5)` returns `5.0`. Called with no arguments, `mean()` divides by a length of `0`, so it raises `ZeroDivisionError` on its own — the test expects that. (Do not guard the empty case; let the division raise.)",
+              tests:
+        `import unittest
+from solution import mean
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_three(self):
+        self.assertEqual(mean(2, 4, 6), 4.0)
+
+    def test_single(self):
+        self.assertEqual(mean(5), 5.0)
+
+    def test_negatives(self):
+        self.assertEqual(mean(-2, 2), 0.0)
+
+    def test_no_args_raises_zerodivisionerror(self):
+        with self.assertRaises(ZeroDivisionError):
+            mean()
+`,
+              solution:
+        `def mean(*nums):
+    return sum(nums) / len(nums)
+` },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine a **keyword-only** parameter (the bare `*` from `m1-args`) with **`TypeError`**. Write `tag(text, *, mark)` that returns the string `mark + text`. `tag(\"hi\", mark=\"!\")` returns `\"!hi\"`; `tag(\"\", mark=\"*\")` returns `\"*\"`. Because `mark` is keyword-only, passing it positionally — `tag(\"hi\", \"!\")` — raises `TypeError`, and omitting it — `tag(\"hi\")` — raises `TypeError` too. The hidden test checks the valid calls with `assertEqual` and the bad calls with `assertRaises(TypeError)`.",
+              tests:
+        `import unittest
+from solution import tag
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(tag("hi", mark="!"), "!hi")
+
+    def test_other(self):
+        self.assertEqual(tag("done", mark="#"), "#done")
+
+    def test_empty_text(self):
+        self.assertEqual(tag("", mark="*"), "*")
+
+    def test_positional_mark_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            tag("hi", "!")
+
+    def test_missing_mark_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            tag("hi")
+`,
+              solution:
+        `def tag(text, *, mark):
+    return mark + text
+` },
+          ],
+        },
+        {
           id: "m1-scope",
           title: "Scope: local, global, nonlocal",
           minutes: 7,
@@ -1344,6 +1837,10 @@ class ExerciseTests(unittest.TestCase):
           blocks: [
             { type: "text", value:
 `Functions are ordinary **objects**. You can store one in a variable, put it in a list, pass it to another function, or return it. A function that takes or returns a function is **higher-order**.` },
+            { type: "text", value:
+`Hold this picture in your head. A function is a **recipe card**. \`def double(x): return x * 2\` writes a card; the name \`double\` is its **label**. \`double\` on its own — no parentheses — is the *card itself*: a thing you can hold, drop into a list, or hand to someone. \`double(5)\` is **cooking** from that card with the ingredient \`5\` — the parentheses are the cooking, and \`10\` is the dish. So \`double\` is the card and \`double()\` is cooking it; that one distinction is the whole lesson.
+
+Because a card is just a thing, you can hand it to another cook. \`apply(fn, value)\` is a cook whose only job is "cook whatever card I'm handed on this ingredient" — and that is what **higher-order** means: a recipe that works with *cards*, not just ingredients. \`map(square, nums)\` says "cook the \`square\` card on every ingredient in the basket"; \`filter\` runs a **taste-test** card on each ingredient and keeps only the ones it approves. And a recipe can hand you back another card — a function that **returns** a function reaches into the drawer and gives you a fresh card to cook later.` },
             { type: "code", run: true, value:
 `def double(x): return x * 2
 def square(x): return x * x
@@ -1356,7 +1853,9 @@ print(apply(square, 5))     # 25` },
             { type: "text", value:
 `This is why \`sorted(key=...)\`, \`map\`, and \`filter\` exist — each takes a function and calls it for you.` },
             { type: "code", run: true, value:
-`nums = [1, 2, 3, 4, 5, 6]
+`def square(x): return x * x      # re-declared so this block runs on its own
+
+nums = [1, 2, 3, 4, 5, 6]
 print(list(map(square, nums)))                    # [1, 4, 9, 16, 25, 36]
 print(list(filter(lambda n: n % 2 == 0, nums)))   # [2, 4, 6]` },
             { type: "quiz", q: "`apply(double, 7)`, where `apply(fn, v)` returns `fn(v)` — the result is:",
@@ -4246,6 +4745,158 @@ print(a & b)   # intersection -> {3, 4}
 print(a | b)   # union
 print(a - b)   # difference -> {1, 2}
 print(3 in a)  # fast membership` },
+            { type: "text", value:
+`Those literals only build a set from values you already know. To turn a **list** into a set, or to grow one as you go, you need the constructor and a few methods.
+
+**\`set(iterable)\`** builds a set from any iterable, dropping duplicates — \`set([1, 1, 2])\` is \`{1, 2}\`. **\`set()\`** with no argument is the empty set. **\`s.add(x)\`** inserts one value (a no-op if it is already there). **\`s.discard(x)\`** removes \`x\` and does nothing if \`x\` is absent; **\`s.remove(x)\`** removes \`x\` but raises \`KeyError\` if it is missing. Test absence with **\`x not in s\`**.` },
+            { type: "code", run: true, value:
+`nums = set([3, 1, 3, 2, 1])  # build from a list, dups dropped
+print(nums)                  # {1, 2, 3}
+
+seen = set()                 # empty set -- NOT {}
+seen.add("ada")
+seen.add("ada")              # already there: no change
+print("bo" not in seen)      # True
+
+nums.discard(99)             # absent -> safe, no error
+nums.remove(2)               # present -> gone; remove() on a
+                             # missing value would raise KeyError
+print(nums)                  # {1, 3}` },
+            { type: "note", kind: "warn", value:
+`**\`{}\` is an empty *dict*, not an empty set.** There is no empty-set literal — write **\`set()\`**. Use \`.add\` to grow it.` },
+            { type: "text", value: "### Build & change a set" },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall the **`set()` constructor**. Write `to_set(items)` that takes a list and returns a **set** of its values with duplicates removed. `to_set([1, 1, 2, 3, 3, 3])` returns `{1, 2, 3}`; `to_set([])` returns `set()`.",
+              tests:
+`import unittest
+from solution import to_set
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_dedupes(self):
+        self.assertEqual(to_set([1, 1, 2, 3, 3, 3]), {1, 2, 3})
+
+    def test_already_unique(self):
+        self.assertEqual(to_set([4, 5, 6]), {4, 5, 6})
+
+    def test_empty(self):
+        self.assertEqual(to_set([]), set())
+
+    def test_returns_a_set(self):
+        self.assertIsInstance(to_set(["a", "a"]), set)
+
+    def test_strings(self):
+        self.assertEqual(to_set(["x", "y", "x"]), {"x", "y"})
+`,
+              solution:
+`def to_set(items):
+    return set(items)
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`.discard(x)`**, which removes a value but does nothing if it is absent (unlike `.remove`, which raises). Write `drop_if_present(values, target)` that builds a **set** from the list `values`, discards `target`, and returns the set. `drop_if_present([1, 2, 3], 2)` returns `{1, 3}`; `drop_if_present([1, 2, 3], 9)` returns `{1, 2, 3}`.",
+              tests:
+`import unittest
+from solution import drop_if_present
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_removes_present(self):
+        self.assertEqual(drop_if_present([1, 2, 3], 2), {1, 3})
+
+    def test_missing_is_safe(self):
+        self.assertEqual(drop_if_present([1, 2, 3], 9), {1, 2, 3})
+
+    def test_empty_input(self):
+        self.assertEqual(drop_if_present([], 5), set())
+
+    def test_dedupes_first(self):
+        self.assertEqual(drop_if_present([4, 4, 5], 4), {5})
+
+    def test_returns_a_set(self):
+        self.assertIsInstance(drop_if_present(["a"], "a"), set)
+`,
+              solution:
+`def drop_if_present(values, target):
+    result = set(values)
+    result.discard(target)
+    return result
+` },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `prune(values, blocked)` — build a **set** from the list `values`, then remove every name in `blocked` using **`.discard`** so a name that is not present never raises. Return the surviving set. `prune(['ada', 'bo', 'cy'], ['bo'])` returns `{'ada', 'cy'}`; `prune(['ada', 'bo'], ['zed', 'bo'])` returns `{'ada'}`.",
+              tests:
+`import unittest
+from solution import prune
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_removes_listed(self):
+        self.assertEqual(prune(["ada", "bo", "cy"], ["bo"]), {"ada", "cy"})
+
+    def test_blocked_absent_is_safe(self):
+        self.assertEqual(prune(["ada", "bo"], ["zed", "bo"]), {"ada"})
+
+    def test_nothing_blocked(self):
+        self.assertEqual(prune(["x", "y"], []), {"x", "y"})
+
+    def test_all_blocked(self):
+        self.assertEqual(prune(["x", "y"], ["x", "y"]), set())
+
+    def test_input_dupes_collapse(self):
+        self.assertEqual(prune(["a", "a", "b"], ["c"]), {"a", "b"})
+
+    def test_empty_values(self):
+        self.assertEqual(prune([], ["a"]), set())
+`,
+              solution:
+`def prune(values, blocked):
+    keep = set(values)
+    for item in blocked:
+        keep.discard(item)
+    return keep
+` },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Write `all_tags(catalog)` — given a **dict** mapping each item name to a list of its tags, return the **set** of every tag used anywhere across the catalog. Start from an empty **`set()`**, walk the dict's **`.values()`**, and **`.add`** each tag you have not seen. `all_tags({'post1': ['news', 'local'], 'post2': ['local', 'food']})` returns `{'news', 'local', 'food'}`; `all_tags({})` returns `set()`.",
+              tests:
+`import unittest
+from solution import all_tags
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_union_of_tags(self):
+        catalog = {
+            "post1": ["news", "local"],
+            "post2": ["local", "food"],
+        }
+        self.assertEqual(all_tags(catalog), {"news", "local", "food"})
+
+    def test_single_entry(self):
+        self.assertEqual(all_tags({"a": ["x", "y"]}), {"x", "y"})
+
+    def test_empty_catalog(self):
+        self.assertEqual(all_tags({}), set())
+
+    def test_empty_tag_lists(self):
+        self.assertEqual(all_tags({"a": [], "b": []}), set())
+
+    def test_duplicates_collapse(self):
+        catalog = {
+            "a": ["dup", "dup"],
+            "b": ["dup"],
+        }
+        self.assertEqual(all_tags(catalog), {"dup"})
+
+    def test_returns_a_set(self):
+        self.assertIsInstance(all_tags({"a": ["z"]}), set)
+`,
+              solution:
+`def all_tags(catalog):
+    found = set()
+    for tags in catalog.values():
+        for tag in tags:
+            if tag not in found:
+                found.add(tag)
+    return found
+` },
             { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Press **Check** to run the hidden tests." },
             { type: "text", value: "### Recall — rebuild it from memory" },
             { type: "exercise", kind: "recall", mode: "sync",
@@ -4444,9 +5095,501 @@ class ExerciseTests(unittest.TestCase):
 
     {
       id: "m4",
-      title: "String Parsing",
-      blurb: "Splitting, tokenizing, and searching strings — the input-handling toolkit.",
+      title: "Strings",
+      blurb: "Case, immutability, f-strings, then splitting and tokenizing — the string toolkit.",
       lessons: [
+        {
+          id: "m4-case",
+          title: "String case & immutability",
+          minutes: 6,
+          blocks: [
+            { type: "text", value:
+        `A **string** is text. Python gives every string built-in **methods** — functions you call *on* the string with a dot: \`s.lower()\`. The three you reach for constantly are \`.lower()\`, \`.upper()\`, and \`.strip()\`.
+
+\`.lower()\` returns the string with every letter made lowercase; \`.upper()\` makes every letter uppercase. Neither takes any arguments. Digits, spaces and punctuation are left untouched.` },
+            { type: "code", run: true, value:
+        `greeting = "Hello, World"
+
+print(greeting.lower())   # hello, world
+print(greeting.upper())   # HELLO, WORLD
+print("ABC123".lower())   # abc123  (the 123 is unchanged)` },
+            { type: "text", value:
+        `\`.strip()\` returns the string with leading and trailing **whitespace** removed — not just spaces but **tabs** and **newlines** too, including the trailing newline that sits on the end of every line of input you read. Whitespace *inside* the string is kept. It is how you clean up messy input like \`"  yes  "\`.` },
+            { type: "code", run: true, value:
+        `raw = "   spaced out   "
+
+print(raw.strip())           # "spaced out"  (ends trimmed, inner space kept)
+print(len("  ab  "))         # 6
+print(len("  ab  ".strip())) # 2
+print((chr(9) + "ab" + chr(10)).strip())  # "ab"  (chr(9)=tab, chr(10)=newline -- strip kills both)` },
+            { type: "text", value:
+        `Here is the rule that trips people up. Strings are **immutable** — they can never be changed in place. So \`.lower()\`, \`.upper()\` and \`.strip()\` do **not** modify the string; they **return a brand-new string** and leave the original exactly as it was.
+
+That means you must **use the return value**: assign it, \`return\` it, or concatenate it. Calling a method and throwing the result away does **nothing**.` },
+            { type: "code", run: true, value:
+        `name = "  Ada  "
+
+name.strip()          # return value DISCARDED -- does nothing
+print(name)           # "  Ada  "  (still padded!)
+
+name = name.strip()   # assign the new string back
+print(name)           # "Ada"  (now it stuck)` },
+            { type: "note", kind: "warn", value:
+        `The #1 mistake: writing \`name.strip()\` on its own line and expecting \`name\` to change. It can't — strings are immutable. You must capture the result: \`name = name.strip()\`.` },
+            { type: "note", kind: "tip", value:
+        `Because each method returns a string, you can **chain** them left to right: \`"  HI  ".strip().lower()\` first trims to \`"HI"\`, then lowercases to \`"hi"\`.` },
+            { type: "quiz",
+              q: "After `name = \"  HI \"` then `name.lower()` on its own line, what is `name`?",
+              options: ["\"hi\"", "\"  hi \"", "\"  HI \""],
+              answer: 2,
+              explain: "`.lower()` returns a new string but the result was discarded, and strings are immutable — so `name` is unchanged: \"  HI \". You would need `name = name.lower()`." },
+            { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Press **Check** to run the hidden tests." },
+            { type: "text", value: "### Recall — rebuild it from memory" },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall the string method `.upper()`, which **returns a new string** with every letter uppercased. Write a function `loud` that takes one parameter `text` and **returns** that text uppercased with a `\"!\"` added on the end. `loud(\"hello\")` returns `\"HELLO!\"`; `loud(\"\")` returns `\"!\"`.",
+              tests:
+        `import unittest
+from solution import loud
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_lower_input(self):
+        self.assertEqual(loud("hello"), "HELLO!")
+
+    def test_mixed_case(self):
+        self.assertEqual(loud("QuIeT"), "QUIET!")
+
+    def test_already_upper(self):
+        self.assertEqual(loud("STOP"), "STOP!")
+
+    def test_empty(self):
+        self.assertEqual(loud(""), "!")
+`,
+              solution:
+        `def loud(text):
+    return text.upper() + "!"
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall the string method `.strip()`, which **returns a new string** with leading and trailing **whitespace** removed — including tabs and the trailing newline on a line of input (inner whitespace is kept). Write a function `clean` that takes one parameter `text` and **returns** it stripped. `clean(\"  hi  \")` returns `\"hi\"`; `clean(\"   \")` returns `\"\"`; `clean(\"  a b  \")` returns `\"a b\"`.",
+              tests:
+        `import unittest
+from solution import clean
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_both_sides(self):
+        self.assertEqual(clean("  hi  "), "hi")
+
+    def test_no_whitespace(self):
+        self.assertEqual(clean("solid"), "solid")
+
+    def test_all_whitespace(self):
+        self.assertEqual(clean("   "), "")
+
+    def test_inner_space_kept(self):
+        self.assertEqual(clean("  a b  "), "a b")
+
+    def test_strips_tab_and_newline(self):
+        # chr(9) is a tab, chr(10) a newline -- strip() removes both, not just spaces
+        self.assertEqual(clean(chr(9) + "word" + chr(10)), "word")
+`,
+              solution:
+        `def clean(text):
+    return text.strip()
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Strings are **immutable**, so you must **use the return value** of a string method. Write a function `tidy` that takes one parameter `text`, reassigns `text` to its **stripped** value, then reassigns `text` to its **lowercased** value, and **returns** the result. `tidy(\"  HELLO  \")` returns `\"hello\"`; `tidy(\"  MixED Case \")` returns `\"mixed case\"`.",
+              tests:
+        `import unittest
+from solution import tidy
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_strip_and_lower(self):
+        self.assertEqual(tidy("  HELLO  "), "hello")
+
+    def test_mixed(self):
+        self.assertEqual(tidy(chr(9) + "MixED Case" + chr(10)), "mixed case")
+
+    def test_already_clean(self):
+        self.assertEqual(tidy("ready"), "ready")
+
+    def test_empty(self):
+        self.assertEqual(tidy(""), "")
+`,
+              solution:
+        `def tidy(text):
+    text = text.strip()
+    text = text.lower()
+    return text
+` },
+            { type: "text", value: "### Apply it" },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write a function `normalize` that takes one parameter `raw` and **returns** it with surrounding whitespace removed and all letters lowercased — by **chaining** `.strip()` then `.lower()`. `normalize(\"  YES  \")` returns `\"yes\"`; `normalize(\"  New York \")` returns `\"new york\"`.",
+              tests:
+        `import unittest
+from solution import normalize
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_pads_and_caps(self):
+        self.assertEqual(normalize("  YES  "), "yes")
+
+    def test_mixed_case(self):
+        self.assertEqual(normalize("HeLLo"), "hello")
+
+    def test_inner_space_preserved(self):
+        self.assertEqual(normalize("  New York "), "new york")
+
+    def test_already_normal(self):
+        self.assertEqual(normalize("ok"), "ok")
+
+    def test_empty(self):
+        self.assertEqual(normalize("   "), "")
+`,
+              solution:
+        `def normalize(raw):
+    return raw.strip().lower()
+` },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write a function `same_word` that takes two parameters `a` and `b` and **returns** `True` if they are the same word ignoring surrounding whitespace and letter case, else `False`. Normalize each with `.strip()` and `.lower()`, then compare with `==`. `same_word(\"Hello\", \"hello\")` returns `True`; `same_word(\"  cat \", \"cat\")` returns `True`; `same_word(\"cat\", \"dog\")` returns `False`.",
+              tests:
+        `import unittest
+from solution import same_word
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_case_difference(self):
+        self.assertTrue(same_word("Hello", "hello"))
+
+    def test_whitespace_difference(self):
+        self.assertTrue(same_word("  cat ", "cat"))
+
+    def test_both(self):
+        self.assertTrue(same_word("  YES", "yes  "))
+
+    def test_genuinely_different(self):
+        self.assertFalse(same_word("cat", "dog"))
+
+    def test_inner_space_matters(self):
+        self.assertFalse(same_word("ab", "a b"))
+`,
+              solution:
+        `def same_word(a, b):
+    return a.strip().lower() == b.strip().lower()
+` },
+            { type: "text", value: "### Combine it" },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Write a function `fold_case` that takes a parameter `text` and a **default parameter** `fold=True`. It always strips surrounding whitespace; when `fold` is `True` it also lowercases the text, and when `fold` is `False` it leaves the case alone. It **returns** the result. `fold_case(\"  HELLO  \")` returns `\"hello\"`; `fold_case(\"  HELLO  \", fold=False)` returns `\"HELLO\"`.",
+              tests:
+        `import unittest
+from solution import fold_case
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_default_folds_case(self):
+        self.assertEqual(fold_case("  HELLO  "), "hello")
+
+    def test_fold_false_keeps_case(self):
+        self.assertEqual(fold_case("  HELLO  ", fold=False), "HELLO")
+
+    def test_fold_false_still_strips(self):
+        self.assertEqual(fold_case("  Mixed ", fold=False), "Mixed")
+
+    def test_default_mixed(self):
+        self.assertEqual(fold_case("  CaT  "), "cat")
+
+    def test_empty(self):
+        self.assertEqual(fold_case("   "), "")
+`,
+              solution:
+        `def fold_case(text, fold=True):
+    text = text.strip()
+    if fold:
+        text = text.lower()
+    return text
+` },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Write a function `matcher` that takes one parameter `target` and **returns a `lambda`** of one parameter `word`. The returned function returns `True` when `word` equals `target` ignoring surrounding whitespace and letter case, else `False` — normalize both with `.strip()` and `.lower()`. For example, `is_cat = matcher(\"Cat\")`, then `is_cat(\"CAT\")` returns `True` and `is_cat(\"dog\")` returns `False`.",
+              tests:
+        `import unittest
+from solution import matcher
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_matches_case_insensitive(self):
+        is_cat = matcher("Cat")
+        self.assertTrue(is_cat("CAT"))
+
+    def test_matches_with_whitespace(self):
+        is_cat = matcher("  cat ")
+        self.assertTrue(is_cat("cat  "))
+
+    def test_rejects_other(self):
+        is_cat = matcher("cat")
+        self.assertFalse(is_cat("dog"))
+
+    def test_independent_targets(self):
+        is_yes = matcher("YES")
+        is_no = matcher("no")
+        self.assertTrue(is_yes("yes"))
+        self.assertFalse(is_no("yes"))
+`,
+              solution:
+        `def matcher(target):
+    target = target.strip().lower()
+    return lambda word: word.strip().lower() == target
+` },
+          ],
+        },
+        {
+          id: "m4-fstrings",
+          title: "f-strings",
+          minutes: 6,
+          blocks: [
+            { type: "text", value:
+        `An **f-string** is a string literal with an \`f\` before the opening quote. Anything inside \`{ }\` is a Python expression that gets evaluated and turned into text — you do **not** call \`str(...)\` on it, the f-string does that for you.` },
+            { type: "code", run: true, value:
+        `name = "Ada"
+score = 95
+print(f"{name} scored {score}")      # Ada scored 95
+print(f"total: {score + 5}")         # total: 100   — any expression works
+print(f"{name} -> {score >= 60}")    # Ada -> True  — a comparison, auto-converted` },
+            { type: "text", value:
+        `After a colon inside the braces you can add a **format spec** that controls how the value is rendered:
+
+- \`{x:.2f}\` — a float with exactly 2 decimal places.
+- \`{n:>5}\` — right-align in a 5-wide field (pad on the left); \`{n:<5}\` left-aligns (pad on the right).
+- \`{n:03d}\` — an integer zero-padded to 3 digits.` },
+            { type: "code", run: true, value:
+        `amount = 19.5
+print(f"price: {amount:.2f}")        # price: 19.50   — fixed 2 decimals
+print(f"pi is {3.14159:.2f}")        # pi is 3.14     — rounds to 2 places
+
+n = 7
+print(f"[{n:>5}]")                   # [    7]        — right-aligned width 5
+print(f"[{n:<5}]")                   # [7    ]        — left-aligned width 5
+print(f"[{n:03d}]")                  # [007]          — zero-padded to 3 digits` },
+            { type: "text", value:
+        `An f-string is just a faster, shorter way to write the \`str()\` + \`+\` concatenation you already know. The two lines below build the **same** string; the f-string needs no \`str(...)\` and no \`+\`. You can also call a method (like \`.upper()\`) right inside the braces.` },
+            { type: "code", run: true, value:
+        `name = "ada"
+n = 42
+print(f"{name.upper()} = {n}")       # ADA = 42       — method call inside braces
+
+# An f-string replaces str() + concatenation:
+print(f"{name} = {n}")               # ada = 42
+print(name + " = " + str(n))         # ada = 42       — same result, more typing` },
+            { type: "note", kind: "info", value:
+        `\`{ }\` always converts to text, so \`f"{42}"\` is \`"42"\` with no \`str()\`. To put a literal brace in the output, double it: \`f"{{}}"\` produces \`"{}"\`.` },
+            { type: "quiz", q: "What does `f\"[{7:>4}]\"` produce?",
+              options: [
+                "\"[7   ]\" — right of the colon means left-align",
+                "\"[   7]\" — `>4` right-aligns `7` in a 4-wide field, padding on the left",
+                "\"[0007]\" — `>4` zero-pads to 4 digits"
+              ],
+              answer: 1,
+              explain: "`>` right-aligns and `4` is the field width, so the value sits on the right with spaces filling the left. Zero-padding would need `04d`." },
+            { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Press **Check** to run the hidden tests." },
+            { type: "text", value: "### Recall — rebuild it from memory" },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Using an **f-string**, write `label(name, age)` that returns the string `\"<name> is <age>\"` — embed both values in braces, no `str(...)`. `label(\"Ada\", 30)` returns `\"Ada is 30\"`; `label(\"Bo\", 0)` returns `\"Bo is 0\"`.",
+              tests:
+        `import unittest
+from solution import label
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(label("Ada", 30), "Ada is 30")
+
+    def test_zero_age(self):
+        self.assertEqual(label("Bo", 0), "Bo is 0")
+
+    def test_empty_name(self):
+        self.assertEqual(label("", 5), " is 5")
+
+    def test_negative(self):
+        self.assertEqual(label("Cy", -2), "Cy is -2")
+`,
+              solution:
+        `def label(name, age):
+    return f"{name} is {age}"
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Using an **f-string** with the `.2f` **format spec**, write `money(amount)` that returns `amount` rendered as a dollar string with exactly two decimal places: `\"$<amount>\"`. `money(19.5)` returns `\"$19.50\"`; `money(3.14159)` returns `\"$3.14\"`; `money(0)` returns `\"$0.00\"`.",
+              tests:
+        `import unittest
+from solution import money
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_two_places(self):
+        self.assertEqual(money(19.5), "$19.50")
+
+    def test_rounds(self):
+        self.assertEqual(money(3.14159), "$3.14")
+
+    def test_zero(self):
+        self.assertEqual(money(0), "$0.00")
+
+    def test_integer_input(self):
+        self.assertEqual(money(7), "$7.00")
+
+    def test_rounds_up(self):
+        self.assertEqual(money(2.005), "$2.00")
+`,
+              solution:
+        `def money(amount):
+    return f"\${amount:.2f}"
+` },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Using an **f-string** with the `03d` **format spec**, write `room(n)` that returns the integer `n` zero-padded to at least 3 digits. `room(7)` returns `\"007\"`; `room(42)` returns `\"042\"`; `room(100)` returns `\"100\"`.",
+              tests:
+        `import unittest
+from solution import room
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_pads(self):
+        self.assertEqual(room(7), "007")
+
+    def test_two_digits(self):
+        self.assertEqual(room(42), "042")
+
+    def test_three_digits(self):
+        self.assertEqual(room(100), "100")
+
+    def test_zero(self):
+        self.assertEqual(room(0), "000")
+
+    def test_overflow_keeps_all_digits(self):
+        self.assertEqual(room(1234), "1234")
+`,
+              solution:
+        `def room(n):
+    return f"{n:03d}"
+` },
+            { type: "text", value: "### Apply it" },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `receipt_line(item, price)` that returns one fixed-width line built with a single **f-string**: `item` left-aligned in a 10-character field (`{item:<10}`) immediately followed by `price` right-aligned in an 8-character field with 2 decimals (`{price:>8.2f}`). `receipt_line(\"watermelon\", 12.0)` returns `\"watermelon   12.00\"`; every result is 18 characters wide.",
+              tests:
+        `import unittest
+from solution import receipt_line
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(receipt_line("apple", 1.5), "apple         1.50")
+
+    def test_long_item(self):
+        self.assertEqual(receipt_line("watermelon", 12.0), "watermelon   12.00")
+
+    def test_rounds(self):
+        self.assertEqual(receipt_line("tea", 3.456), "tea           3.46")
+
+    def test_zero_price(self):
+        self.assertEqual(receipt_line("ice", 0), "ice           0.00")
+
+    def test_width_total(self):
+        self.assertEqual(len(receipt_line("x", 9.99)), 18)
+`,
+              solution:
+        `def receipt_line(item, price):
+    return f"{item:<10}{price:>8.2f}"
+` },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "Write `progress(done, total)` that returns a status string `\"<done>/<total> (<pct>%)\"`, where `pct` is `done / total * 100` formatted to **one** decimal place inside the **f-string**. `progress(1, 2)` returns `\"1/2 (50.0%)\"`; `progress(1, 3)` returns `\"1/3 (33.3%)\"`; `progress(4, 4)` returns `\"4/4 (100.0%)\"`.",
+              tests:
+        `import unittest
+from solution import progress
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_half(self):
+        self.assertEqual(progress(1, 2), "1/2 (50.0%)")
+
+    def test_third(self):
+        self.assertEqual(progress(1, 3), "1/3 (33.3%)")
+
+    def test_complete(self):
+        self.assertEqual(progress(4, 4), "4/4 (100.0%)")
+
+    def test_none_done(self):
+        self.assertEqual(progress(0, 5), "0/5 (0.0%)")
+
+    def test_rounds(self):
+        self.assertEqual(progress(2, 3), "2/3 (66.7%)")
+`,
+              solution:
+        `def progress(done, total):
+    pct = done / total * 100
+    return f"{done}/{total} ({pct:.1f}%)"
+` },
+            { type: "text", value: "### Combine it" },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine an **f-string** with the case methods `.strip()` and `.upper()`. Write `badge(name, score)` that **strips** surrounding whitespace from `name`, **uppercases** it, and returns `\"<NAME>: <score> pts\"`. Inner spaces are kept. `badge(\"ada\", 10)` returns `\"ADA: 10 pts\"`; `badge(\"  bo  \", 5)` returns `\"BO: 5 pts\"`; `badge(\"  red ball \", 7)` returns `\"RED BALL: 7 pts\"`.",
+              tests:
+        `import unittest
+from solution import badge
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual(badge("ada", 10), "ADA: 10 pts")
+
+    def test_strips_and_uppers(self):
+        self.assertEqual(badge("  bo  ", 5), "BO: 5 pts")
+
+    def test_already_upper(self):
+        self.assertEqual(badge("CY", 0), "CY: 0 pts")
+
+    def test_negative_score(self):
+        self.assertEqual(badge(" dee ", -3), "DEE: -3 pts")
+
+    def test_inner_space_kept(self):
+        self.assertEqual(badge("  red ball ", 7), "RED BALL: 7 pts")
+`,
+              solution:
+        `def badge(name, score):
+    clean = name.strip().upper()
+    return f"{clean}: {score} pts"
+` },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine an **f-string** with a **closure**. Write `make_formatter(unit)` that returns a new **function** `fmt(value)`; calling `fmt(value)` returns `value` formatted to 2 decimals followed by a space and the captured `unit` — `\"<value> <unit>\"`. `kg = make_formatter(\"kg\")` then `kg(3.5)` returns `\"3.50 kg\"`; `make_formatter(\"USD\")(0)` returns `\"0.00 USD\"`.",
+              tests:
+        `import unittest
+from solution import make_formatter
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_kg(self):
+        kg = make_formatter("kg")
+        self.assertEqual(kg(3.5), "3.50 kg")
+
+    def test_rounds(self):
+        m = make_formatter("m")
+        self.assertEqual(m(1.005), "1.00 m")
+
+    def test_remembers_unit(self):
+        usd = make_formatter("USD")
+        self.assertEqual(usd(0), "0.00 USD")
+        self.assertEqual(usd(42), "42.00 USD")
+
+    def test_independent_closures(self):
+        kg = make_formatter("kg")
+        lb = make_formatter("lb")
+        self.assertEqual(kg(2), "2.00 kg")
+        self.assertEqual(lb(2), "2.00 lb")
+`,
+              solution:
+        `def make_formatter(unit):
+    def fmt(value):
+        return f"{value:.2f} {unit}"
+    return fmt
+` },
+          ],
+        },
         {
           id: "m4-split",
           title: "Splitting & tokenizing",
@@ -4875,6 +6018,26 @@ window = deque(maxlen=3)
 for n in [1, 2, 3, 4, 5]:
     window.append(n)
     print(list(window))   # only ever the last 3` },
+            { type: "text", value:
+            `### Both ends, O(1)
+
+\`.append(x)\` adds to the **back**; **\`.appendleft(x)\`** adds to the **front**. \`.pop()\` removes and returns from the back; **\`.popleft()\`** removes and returns from the **front** — both in **O(1)**.
+
+That front pair is the whole point. A plain list can only cheaply touch its tail: \`list.pop(0)\` shifts every remaining element, so it is **O(n)**. A \`deque\` pops the front in O(1), which makes it the right tool for a **FIFO queue** (first in, first out) or a **BFS frontier** — build it from any iterable, then drain it front-to-back.` },
+            { type: "code", run: true, value:
+            `from collections import deque
+
+# A list pops the FRONT in O(n); a deque does it in O(1).
+queue = deque(['ada', 'bo', 'cy'])   # build from any iterable
+queue.append('dot')                  # add to the BACK
+queue.appendleft('eve')              # add to the FRONT
+
+served = []
+while queue:                         # drain front-to-back, FIFO
+    served.append(queue.popleft())   # remove & return the FRONT, O(1)
+print(served)                        # ['eve', 'ada', 'bo', 'cy', 'dot']` },
+            { type: "note", kind: "tip", value:
+            `Reach for a \`deque\` the moment you need to remove from the front. \`list.pop(0)\` looks innocent but is O(n) per call — quietly O(n²) in a loop. \`popleft\` is O(1).` },
             { type: "text", value: "## Your turn\n\nWrite each answer from memory in the blank editor — no notes, no scrolling back up. Press **Check** to run the hidden tests." },
             { type: "text", value: "### Recall — rebuild it from memory" },
             { type: "exercise", kind: "recall", mode: "sync",
@@ -5062,6 +6225,127 @@ def recent_by_user(events, size):
     for user, action in events:
         history.setdefault(user, deque(maxlen=size)).append(action)
     return {user: list(actions) for user, actions in history.items()}
+` },
+            { type: "text", value: "### Front-end drills — `popleft` & `appendleft`" },
+            { type: "exercise", kind: "recall", mode: "sync",
+              prompt: "Recall **`.popleft()`** — remove and return from the **front** of a `deque`, in O(1). Write `drain_front(items)` that builds a `deque` from `items`, then repeatedly `popleft`s until it is empty, collecting the values into a list in the order they came off. The result is just `items` in FIFO order. `drain_front([1, 2, 3])` returns `[1, 2, 3]`; `drain_front([])` returns `[]`.",
+              tests:
+            `import unittest
+from solution import drain_front
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_fifo_order(self):
+        self.assertEqual(drain_front([1, 2, 3]), [1, 2, 3])
+
+    def test_strings(self):
+        self.assertEqual(drain_front(['a', 'b', 'c']), ['a', 'b', 'c'])
+
+    def test_empty(self):
+        self.assertEqual(drain_front([]), [])
+
+    def test_single(self):
+        self.assertEqual(drain_front([42]), [42])
+
+    def test_from_range(self):
+        self.assertEqual(drain_front(range(4)), [0, 1, 2, 3])
+`,
+              solution:
+            `from collections import deque
+
+
+def drain_front(items):
+    queue = deque(items)
+    out = []
+    while queue:
+        out.append(queue.popleft())
+    return out
+` },
+            { type: "exercise", kind: "applied", mode: "sync",
+              prompt: "A help desk serves tickets first-come, first-served — except urgent ones jump the line. Using a **`deque`**, write `serve_tickets(requests)` where `requests` is a list of `(name, urgent)` tuples. Add each `name` to the **back** with `.append`, but if `urgent` is truthy add it to the **front** with **`.appendleft`** instead. Then serve everyone by `popleft`-ing front to back, and return the list of names in served order. `serve_tickets([('a', False), ('b', False), ('vip', True)])` returns `['vip', 'a', 'b']`; `serve_tickets([])` returns `[]`.",
+              tests:
+            `import unittest
+from solution import serve_tickets
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_all_normal_is_fifo(self):
+        reqs = [('a', False), ('b', False), ('c', False)]
+        self.assertEqual(serve_tickets(reqs), ['a', 'b', 'c'])
+
+    def test_urgent_jumps_front(self):
+        reqs = [('a', False), ('b', False), ('vip', True)]
+        self.assertEqual(serve_tickets(reqs), ['vip', 'a', 'b'])
+
+    def test_two_urgent_last_wins_front(self):
+        reqs = [('a', False), ('u1', True), ('u2', True)]
+        self.assertEqual(serve_tickets(reqs), ['u2', 'u1', 'a'])
+
+    def test_empty(self):
+        self.assertEqual(serve_tickets([]), [])
+
+    def test_single_urgent(self):
+        self.assertEqual(serve_tickets([('solo', True)]), ['solo'])
+`,
+              solution:
+            `from collections import deque
+
+
+def serve_tickets(requests):
+    line = deque()
+    for name, urgent in requests:
+        if urgent:
+            line.appendleft(name)
+        else:
+            line.append(name)
+    served = []
+    while line:
+        served.append(line.popleft())
+    return served
+` },
+            { type: "exercise", kind: "cumulative", mode: "sync",
+              prompt: "Combine **`.popleft()`** with a **`Counter`**. Write `service_summary(jobs)` that builds a `deque` from `jobs` (a list of job-type strings), then drains it front-to-back with `popleft`, tallying each job type into a `Counter` as it comes off. Return a plain `dict` mapping each job type to its count. `service_summary(['print', 'scan', 'print'])` returns `{'print': 2, 'scan': 1}`; `service_summary([])` returns `{}`.",
+              tests:
+            `import unittest
+from solution import service_summary
+
+
+class ExerciseTests(unittest.TestCase):
+    def test_mixed(self):
+        jobs = ['print', 'scan', 'print', 'fax', 'print']
+        self.assertEqual(
+            service_summary(jobs),
+            {'print': 3, 'scan': 1, 'fax': 1},
+        )
+
+    def test_empty(self):
+        self.assertEqual(service_summary([]), {})
+
+    def test_single(self):
+        self.assertEqual(service_summary(['scan']), {'scan': 1})
+
+    def test_all_same(self):
+        self.assertEqual(
+            service_summary(['print', 'print']), {'print': 2}
+        )
+
+    def test_all_distinct(self):
+        self.assertEqual(
+            service_summary(['a', 'b', 'c']),
+            {'a': 1, 'b': 1, 'c': 1},
+        )
+`,
+              solution:
+            `from collections import deque, Counter
+
+
+def service_summary(jobs):
+    queue = deque(jobs)
+    counts = Counter()
+    while queue:
+        kind = queue.popleft()
+        counts[kind] += 1
+    return dict(counts)
 ` },
           ],
         },

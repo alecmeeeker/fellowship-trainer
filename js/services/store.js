@@ -6,7 +6,13 @@ const KEY = "fellowship-trainer:v1";
 function freshState() {
   return {
     schemaVersion: 1,
-    settings: { daysUntilExam: null },
+    settings: {
+      daysUntilExam: null,
+      // appearance — read/written through js/services/theme-manager.js
+      theme: "win95",        // active UI theme id (dark | win95 | springbreak95 | xfiles)
+      fontScale: "m",        // s | m | l  (drives html[data-font-scale] zoom)
+      reduceMotion: false,   // drives html[data-motion="reduce"]
+    },
     lessons: {},   // lessonId  -> { status, completedAt }
     exercises: {}, // exId "<lessonId>#<i>" -> { status, best:{passed,total}, attempts, lastRunAt }
     drills: {},    // drillId   -> { status, code, best:{passed,total}, attempts, lastRunAt }
@@ -37,7 +43,13 @@ class Store {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.schemaVersion === 1) {
-          return Object.assign(freshState(), parsed);
+          const defaults = freshState();
+          const merged = Object.assign({}, defaults, parsed);
+          // settings must DEEP-merge: a saved profile predating the appearance
+          // keys carries `settings:{daysUntilExam}` only, and a shallow assign
+          // would drop the new theme/fontScale/reduceMotion defaults entirely.
+          merged.settings = Object.assign({}, defaults.settings, parsed.settings || {});
+          return merged;
         }
       }
     } catch (e) {

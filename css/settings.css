@@ -1,0 +1,220 @@
+/* settings.css — chrome for the theme/display popover + global a11y hooks
+ * (font-scale + reduce-motion). Loaded AFTER components.css and BEFORE the
+ * per-theme files and mobile.css. Geometry only — appearance comes from the
+ * tokenized component classes the panel is built from, so every theme reskins
+ * it for free. */
+
+/* ---- header trigger ---- */
+.settings-trigger { display: inline-flex; align-items: center; gap: 7px; }
+.settings-trigger__swatch {
+  width: 12px; height: 12px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  border: 1px solid var(--accent-line);
+  box-shadow: 0 0 8px var(--accent-glow);
+  flex: none;
+}
+.settings-trigger__label { font-size: 11px; }
+
+/* ---- the popover ---- */
+.settings-pop {
+  /* !important guards the geometry: the popover also carries .card so it
+     reskins per theme, but every theme sets `[data-theme] .card{position:
+     relative}` (specificity 0,3,0) to anchor its pseudo-decoration — without
+     !important that would override position:fixed and drop the popover into
+     the .shell grid flow. */
+  position: fixed !important;
+  top: calc(var(--header-h) + 8px) !important;
+  right: 14px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 80;
+  width: 320px;
+  max-width: calc(100vw - 28px);
+  max-height: calc(100vh - var(--header-h) - 22px);
+  overflow-y: auto;
+  padding: 14px;
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.settings-pop[hidden] { display: none; }
+
+.settings-pop__sec { display: flex; flex-direction: column; gap: 9px; }
+.settings-pop__sec--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.settings-pop__label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.settings-pop__label--inline { text-transform: none; font-size: 12px; letter-spacing: 0.02em; color: var(--ink-dim); }
+.settings-pop__sep { height: 1px; background: var(--line); margin: 2px 0; }
+
+/* ---- theme swatches ---- */
+.settings-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.theme-swatch:hover { border-color: var(--accent-line); transform: translateY(-1px); }
+.theme-swatch.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 0 12px var(--accent-glow);
+}
+.theme-swatch__chip {
+  height: 42px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.theme-swatch__accent {
+  position: absolute;
+  left: 7px; bottom: 7px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.theme-swatch__aa {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+.theme-swatch__name {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--ink-dim);
+}
+.theme-swatch.is-selected .theme-swatch__name { color: var(--ink); }
+
+/* ---- text-size segmented control (reuses .tabs/.tab look) ---- */
+.settings-seg { display: inline-flex; gap: 0; align-self: flex-start; }
+.settings-seg__tab {
+  min-width: 42px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+/* ---- reduce-motion switch ---- */
+.settings-switch { display: inline-flex; }
+.settings-switch__btn {
+  position: relative;
+  width: 42px; height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-inset);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  flex: none;
+}
+.settings-switch__btn.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.settings-switch__knob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  transition: transform var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.settings-switch__btn.is-on .settings-switch__knob {
+  transform: translateX(18px);
+  background: var(--accent-ink);
+}
+
+/* ---- data buttons ---- */
+.settings-data { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- mobile: popover becomes a bottom sheet, trigger label hides ---- */
+@media (max-width: 760px) {
+  .settings-pop {
+    top: auto !important;
+    bottom: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    max-height: 76vh;
+  }
+}
+@media (max-width: 520px) {
+  .settings-trigger__label { display: none; }
+}
+
+/* =========================================================================
+   GLOBAL ACCESSIBILITY HOOKS — driven by data-* on <html> (theme-manager.js)
+   ========================================================================= */
+
+/* Text size. Everything is sized in px with no root font-size, so `zoom` is the
+   only mechanism that scales the WHOLE UI (rail, header, IDE) proportionally
+   without a 1700-line refactor. Supported in Chromium/Safari and Firefox 126+;
+   degrades to default size elsewhere. "m" carries no attribute (zoom 1). */
+html[data-font-scale="s"] { zoom: 0.92; }
+html[data-font-scale="l"] { zoom: 1.15; }
+
+/* CodeMirror MUST opt out of the root `zoom`. CSS `zoom` desyncs CodeMirror 5's
+   caret/click geometry from the painted glyphs (CM5 measures with
+   getBoundingClientRect and carries no model of scale), so under zoom the cursor
+   drifts off the text — worsening toward the right of the line — and lands
+   outside auto-closed brackets, making the editor unusable. Fix: neutralize the
+   inherited zoom on the editor subtree (back to an effective 1x, where CM
+   measures correctly) and scale the editor's TEXT with font-size instead — a
+   genuine metric change CM handles. theme-manager.applyFontScale dispatches
+   "themechange" on change so each mounted editor re-measures (editor.js). */
+html[data-font-scale="s"] .CodeMirror { zoom: calc(1 / 0.92); }
+html[data-font-scale="l"] .CodeMirror { zoom: calc(1 / 1.15); }
+/* Desktop scales editor text with the setting; mobile keeps its 16px rule
+   (css/mobile.css) so iOS does not zoom the page on focus. The base size is
+   .CodeMirror{font-size:13px} (css/components.css). */
+@media (min-width: 761px) {
+  html[data-font-scale="s"] .CodeMirror,
+  html[data-font-scale="s"] .CodeMirror textarea { font-size: calc(13px * 0.92); }
+  html[data-font-scale="l"] .CodeMirror,
+  html[data-font-scale="l"] .CodeMirror textarea { font-size: calc(13px * 1.15); }
+}
+
+/* Reduce motion — user toggle. OR-ed with the OS preference below. Collapses
+   transitions/animations everywhere so per-theme ambient effects (beach-ball
+   bob, sun drift, fog, flashlight transition, marching ants) go still. */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

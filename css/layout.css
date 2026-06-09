@@ -1,12 +1,16 @@
 /* layout.css — app shell, screen scaffolding, the 3-pane IDE grid */
 
-#app { height: 100vh; }
+/* height:100% (via the html,body{height:100%} chain) — NOT 100vh — so the
+ * settings font-size control (which scales the UI with `zoom`) keeps the shell
+ * height correct. Under `zoom`, 100vh overflows the viewport and body{overflow:
+ * hidden} clips the bottom of tall pages (the footer button becomes unreachable). */
+#app { height: 100%; }
 
 /* ---- app shell: rail + main ---- */
 .shell {
   display: grid;
   grid-template-columns: var(--rail-w) 1fr;
-  height: 100vh;
+  height: 100%;   /* see #app note: 100% (not 100vh) is zoom-safe */
 }
 
 /* ---- left rail ---- */
@@ -214,7 +218,7 @@
 
 /* loading boot screen */
 .boot {
-  height: 100vh;
+  height: 100%;   /* zoom-safe; see #app note */
   display: flex;
   flex-direction: column;
   align-items: center;

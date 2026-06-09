@@ -2,6 +2,7 @@
 import { el, clear } from "./lib/dom.js";
 import { store } from "./services/store.js";
 import { runner } from "./engine/runner-client.js";
+import { createSettings } from "./components/settings-panel.js";
 
 const NAV = [
   { key: "dashboard", label: "Dashboard",  glyph: "◈", href: "#/dashboard" },
@@ -41,6 +42,9 @@ export function buildShell(root) {
   }, "☰");
   const backdrop = el("div", { class: "nav-backdrop", "aria-hidden": "true" });
 
+  // Theme & display settings: a header control + its popover (appended to body).
+  const settings = createSettings();
+
   const rail = el("aside", { class: "rail" },
     el("div", { class: "rail__brand" },
       el("div", { class: "rail__mark" }, "FELLOWSHIP TRAINER"),
@@ -60,9 +64,11 @@ export function buildShell(root) {
         title,
         el("span", { class: "header__spacer" }),
         streakWrap,
+        settings.trigger,
         engine),
       outlet),
-    backdrop);
+    backdrop,
+    settings.panel);
 
   function setNav(open) {
     shellEl.classList.toggle("nav-open", open);
